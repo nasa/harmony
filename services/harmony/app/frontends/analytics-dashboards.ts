@@ -101,15 +101,18 @@ export async function createAnalyticsDashboard(req: HarmonyRequest, res: Respons
     sendError(res, 400, 'The dashboard could not be saved', problems);
     return;
   }
-  await db.transaction(async (tx) => {
-    if (await dashboardNameIsTaken(tx, req.user, dashboard.name)) {
-      sendError(res, 409, `You already have a dashboard named "${dashboard.name}"`);
-      return;
-    }
+  // Responds only once the transaction has committed, so a failed commit isn't reported as saved
+  const saved = await db.transaction(async (tx) => {
+    if (await dashboardNameIsTaken(tx, req.user, dashboard.name)) return false;
     await dashboard.save(tx);
-    req.context.logger.info(`User ${req.user} saved analytics dashboard ${dashboard.id} "${dashboard.name}"`);
-    res.status(201).json(dashboard.serialize());
+    return true;
   });
+  if (!saved) {
+    sendError(res, 409, `You already have a dashboard named "${dashboard.name}"`);
+    return;
+  }
+  req.context.logger.info(`User ${req.user} saved analytics dashboard ${dashboard.id} "${dashboard.name}"`);
+  res.status(201).json(dashboard.serialize());
 }
 
 /**
@@ -131,16 +134,18 @@ export async function updateAnalyticsDashboard(req: HarmonyRequest, res: Respons
     sendError(res, 400, 'The dashboard could not be saved', problems);
     return;
   }
-  await db.transaction(async (tx) => {
-    if (await dashboardNameIsTaken(tx, dashboard.username, dashboard.name, dashboard.id)) {
-      sendError(res, 409, `${dashboard.username} already has a dashboard named "${dashboard.name}"`);
-      return;
-    }
+  const saved = await db.transaction(async (tx) => {
+    if (await dashboardNameIsTaken(tx, dashboard.username, dashboard.name, dashboard.id)) return false;
     const { name, description, panels, parameters } = dashboard;
     await dashboard.save(tx, { name, description, panels, parameters });
-    req.context.logger.info(`User ${req.user} updated analytics dashboard ${dashboard.id} "${dashboard.name}"`);
-    res.json(dashboard.serialize());
+    return true;
   });
+  if (!saved) {
+    sendError(res, 409, `${dashboard.username} already has a dashboard named "${dashboard.name}"`);
+    return;
+  }
+  req.context.logger.info(`User ${req.user} updated analytics dashboard ${dashboard.id} "${dashboard.name}"`);
+  res.json(dashboard.serialize());
 }
 
 /**

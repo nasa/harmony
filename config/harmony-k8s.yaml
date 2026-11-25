@@ -25,6 +25,11 @@ spec:
                 name: harmony-env
             - secretRef:
                 name: harmony-secrets
+            # ANALYTICS_QUERY_SHARED_SECRET, kept apart from harmony-secrets (see
+            # bin/create-k8s-config-maps-and-secrets)
+            - secretRef:
+                name: analytics-query-secrets
+                optional: true
           ports:
             - containerPort: 3000
             - containerPort: 3001

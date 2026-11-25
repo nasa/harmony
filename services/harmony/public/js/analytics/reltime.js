@@ -24,13 +24,18 @@ export function isRelative(text) {
 }
 
 /**
- * Adds a number of units to a time (months and years by the calendar, in UTC)
+ * Adds a number of units to a time (months and years by the calendar, in UTC). A day past the end
+ * of the month it lands in becomes that month's last day: March 31 less a month is February 28 (or
+ * 29), not March 3.
  */
 function add(ms, amount, unit) {
   if (unit === 'M' || unit === 'y') {
     const d = new Date(ms);
-    const months = unit === 'M' ? amount : amount * 12;
-    d.setUTCMonth(d.getUTCMonth() + months);
+    const month = d.getUTCMonth() + (unit === 'M' ? amount : amount * 12);
+    const year = d.getUTCFullYear() + Math.floor(month / 12);
+    const monthOfYear = ((month % 12) + 12) % 12;
+    const lastDay = new Date(Date.UTC(year, monthOfYear + 1, 0)).getUTCDate();
+    d.setUTCFullYear(year, monthOfYear, Math.min(d.getUTCDate(), lastDay));
     return d.getTime();
   }
   return ms + amount * UNITS[unit];

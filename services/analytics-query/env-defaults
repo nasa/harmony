@@ -24,7 +24,8 @@ ANALYTICS_QUERY_THREADS=2
 ANALYTICS_QUERY_MAX_CONCURRENT=2
 ANALYTICS_QUERY_MAX_WAITING=8
 
-# Queries running longer than this are interrupted
+# A query that takes longer than this to validate and run is interrupted. Time spent waiting for a
+# free slot (ANALYTICS_QUERY_MAX_CONCURRENT) isn't counted.
 ANALYTICS_QUERY_TIMEOUT_MS=60000
 
 # The most rows a query returns. Larger results are truncated (and flagged as truncated).
@@ -36,7 +37,8 @@ ANALYTICS_SCHEMA_CACHE_SECONDS=900
 
 # Recreate the DuckDB instance after this many minutes (0 = never). The AWS credentials are read
 # when the instance is set up, before it is locked down, so recreating it periodically picks up
-# refreshed credentials.
+# refreshed credentials. Queries keep using the old instance until the new one is ready; if it
+# can't be created, the old one is kept and recreating it is tried again a minute later.
 ANALYTICS_QUERY_INSTANCE_MAX_AGE_MINUTES=30
 
 # For tests only: attach this DuckDB database file as the catalog instead of the Iceberg tables

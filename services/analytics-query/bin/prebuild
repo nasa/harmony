@@ -3,6 +3,9 @@
 # sets up the project to be ready for compiling and building docker image
 #
 
+# Stop at the first failure, e.g. a failed utility build, rather than copying a stale one
+set -e
+
 pushd ../../packages/util
 npm run build
 popd

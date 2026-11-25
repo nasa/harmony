@@ -86,8 +86,9 @@ export async function createLockedInstance(source: CatalogSource, limits: Instan
     memory_limit: limits.memoryLimit,
     threads: String(limits.threads),
   });
-  const conn = await instance.connect();
+  let conn: DuckDBConnection | null = null;
   try {
+    conn = await instance.connect();
     if (source.kind === 'ministack') {
       // As in the cron service, the aws extension needs an account id to sign ministack requests
       process.env.AWS_ACCOUNT_ID ??= '000000000000';
@@ -103,8 +104,11 @@ export async function createLockedInstance(source: CatalogSource, limits: Instan
     }
     await conn.run('SET enable_external_access = false;');
     await conn.run('SET lock_configuration = true;');
+    // Every query's connection selects the analytics tables' namespace (see openConnection), so
+    // check it is there - otherwise the instance would be ready while every query failed
+    await conn.run(`USE ${CATALOG}.${SCHEMA};`);
   } catch (e) {
-    conn.closeSync();
+    conn?.closeSync();
     instance.closeSync();
     throw e;
   }
@@ -117,10 +121,15 @@ export async function createLockedInstance(source: CatalogSource, limits: Instan
  * queries can refer to them without qualifying them. (The default schema is per connection.)
  *
  * @param instance - an instance from createLockedInstance
- * @returns the connection
+ * @returns the connection, which the caller closes
  */
 export async function openConnection(instance: DuckDBInstance): Promise<DuckDBConnection> {
   const conn = await instance.connect();
-  await conn.run(`USE ${CATALOG}.${SCHEMA};`);
+  try {
+    await conn.run(`USE ${CATALOG}.${SCHEMA};`);
+  } catch (e) {
+    conn.closeSync();
+    throw e;
+  }
   return conn;
 }

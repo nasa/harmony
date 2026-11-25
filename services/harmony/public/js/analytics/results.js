@@ -133,6 +133,11 @@ export function parameterValue(text, type, now = Date.now()) {
     if (!Number.isFinite(n) || (INTEGER_TYPE.test(type) && !Number.isInteger(n))) {
       throw new Error(`"${text}" is not a valid ${type}`);
     }
+    // Past 2^53 a number may not be the one entered (2^53 + 1 becomes 2^53), so it would be run,
+    // and saved, as something else
+    if (INTEGER_TYPE.test(type) && !Number.isSafeInteger(n)) {
+      throw new Error(`"${text}" is too large to use exactly (the most is ±${Number.MAX_SAFE_INTEGER.toLocaleString()})`);
+    }
     return n;
   }
   return text === '' ? null : text;

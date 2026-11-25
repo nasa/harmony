@@ -33,6 +33,13 @@ const state = {
   snapshot: null,
   // How to chart the results (see chart.js), or null for no chart
   chart: null,
+  // Increases whenever a different query (or a new one) is shown, so a run, open or save that was
+  // started for the one before doesn't change what is shown now
+  selection: 0,
+  // Increases with every open, so only the latest one shows its query
+  openId: 0,
+  // Increases with every run, so only the latest one re-enables the Run button
+  runId: 0,
 };
 
 /**
@@ -180,12 +187,17 @@ async function loadSchema(editor) {
  * Shows a field for each of the query's parameters, keeping the values already entered
  *
  * @param {Array<{name: string, type: string}>} parameters - the parameters
+ * @param {object} editor - the editor
  */
-function renderParameters(parameters) {
+function renderParameters(parameters, editor) {
   state.parameters = parameters;
   renderParameterFields($('parameterFields'), parameters, {
     text: state.parameterValues,
-    onChange: (name, text) => state.parameterValues.set(name, text),
+    onChange: (name, text) => {
+      state.parameterValues.set(name, text);
+      // The values are saved with the query as its defaults, so changing one is a change to it
+      updateSaveControls(editor);
+    },
     idPrefix: 'parameter',
   });
   $('parameters').hidden = parameters.length === 0;
@@ -196,8 +208,9 @@ function renderParameters(parameters) {
  *
  * @param {object|null} result - the validation result, or null if the query couldn't be checked
  * @param {string} text - the query it is for
+ * @param {object} editor - the editor
  */
-function onValidated(result, text) {
+function onValidated(result, text, editor) {
   const status = $('validationStatus');
   state.validation = result;
   state.validatedText = text;
@@ -209,7 +222,7 @@ function onValidated(result, text) {
   if (result.valid) {
     status.classList.add('is-valid');
     status.textContent = `✓ Valid: ${result.columns.length} column${result.columns.length === 1 ? '' : 's'}`;
-    renderParameters(result.parameters);
+    renderParameters(result.parameters, editor);
   } else {
     status.classList.add('is-invalid');
     status.textContent = `✗ ${result.errors.map((e) => e.message).join('; ')}`;
@@ -370,6 +383,10 @@ function rowLimit() {
 async function run(editor) {
   const text = editor.text();
   if (text.trim() === '') return;
+  const runId = ++state.runId;
+  // Once another query is opened, this run's validation, result or error is for one not shown
+  const { selection } = state;
+  const stale = () => state.selection !== selection;
   const button = $('runQuery');
   clearError();
   button.disabled = true;
@@ -377,10 +394,13 @@ async function run(editor) {
   try {
     // Make sure the parameter fields are for this query
     if (state.validatedText !== text) {
-      onValidated(await api('validate', { sql: text }), text);
+      const validation = await api('validate', { sql: text });
+      if (stale()) return;
+      onValidated(validation, text, editor);
     }
     const limit = rowLimit();
     const result = await api('query', { sql: text, params: parameterValues(), limit });
+    if (stale()) return;
     state.result = result;
     renderTable($('resultsTable'), result);
     renderChartControls();
@@ -396,10 +416,11 @@ async function run(editor) {
     truncated.hidden = !result.truncated;
     $('results').hidden = false;
   } catch (e) {
+    if (stale()) return;
     $('resultsSummary').textContent = '';
     showError(e, editor);
   } finally {
-    button.disabled = false;
+    if (runId === state.runId) button.disabled = false;
   }
 }
 
@@ -414,7 +435,17 @@ async function okToDiscard(editor) {
 }
 
 /**
- * Gets the query's name, description and SQL as they are now
+ * Gets parameter values (as text, by name) in a form to compare: the ones set, in name order. They
+ * are compared as written, so a relative time (now-7d) is one value, not the time it means now.
+ *
+ * @param {Map<string, string>} values - the values
+ * @returns {string} the comparable form
+ */
+const parametersText = (values) => JSON.stringify([...values].filter(([, text]) => text !== '').sort());
+
+/**
+ * Gets the query's name, description, SQL, chart, row limit, sharing and parameter values as they
+ * are now
  *
  * @param {object} editor - the editor
  */
@@ -426,11 +457,13 @@ function currentDetails(editor) {
     chart: JSON.stringify(state.chart),
     rowLimit: $('rowLimit').value,
     shared: $('queryShared').checked,
+    parameters: parametersText(state.parameterValues),
   };
 }
 
 /**
- * Gets what to compare the current details with to tell whether a saved query has changed
+ * Gets what to compare the current details with to tell whether a saved query that has just been
+ * opened has changed
  *
  * @param {object} query - the saved query
  */
@@ -444,8 +477,11 @@ function snapshotOf(query) {
     rowLimit: $('rowLimit').value,
     // As shown, which is the query's if the user can change it, else private (see showQuery)
     shared: $('queryShared').checked,
+    parameters: parametersText(new Map(Object.entries(query.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]))),
   };
 }
+
+const DETAIL_KEYS = ['name', 'description', 'sql', 'chart', 'rowLimit', 'shared', 'parameters'];
 
 /**
  * Whether opening another query would lose changes: edits to the open saved query, or a new query
@@ -456,7 +492,7 @@ function snapshotOf(query) {
 function hasUnsavedChanges(editor) {
   const details = currentDetails(editor);
   if (!state.snapshot) return details.sql.trim() !== '';
-  return ['name', 'description', 'sql', 'chart', 'rowLimit', 'shared'].some((key) => details[key] !== state.snapshot[key]);
+  return DETAIL_KEYS.some((key) => details[key] !== state.snapshot[key]);
 }
 
 /**
@@ -526,6 +562,8 @@ function setUrlQuery(id) {
  * @param {object} editor - the editor
  */
 function showQuery(query, editor) {
+  state.selection += 1;
+  state.openId += 1;
   state.current = query;
   // A query saved with a row limit runs with it; otherwise the box keeps the user's own setting
   if (query?.rowLimit) $('rowLimit').value = query.rowLimit;
@@ -540,6 +578,10 @@ function showQuery(query, editor) {
   $('parameterFields').replaceChildren();
   $('parameters').hidden = true;
   state.parameters = [];
+  // The validation was of the query shown before (even if its SQL is the same, the parameter fields
+  // have gone), so Run validates this one first
+  state.validation = null;
+  state.validatedText = null;
   state.parameterValues = new Map(Object.entries(query?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
   editor.setText(query?.sql ?? '');
   setUrlQuery(query?.id ?? null);
@@ -559,14 +601,17 @@ function showQuery(query, editor) {
  */
 async function openQuery(id, editor, askFirst = true) {
   if (askFirst && !(await okToDiscard(editor))) return;
+  // Opening another query (or showing a new one) meanwhile makes this one's answer stale
+  const openId = ++state.openId;
   try {
     const query = await api(`queries/${encodeURIComponent(id)}`);
+    if (openId !== state.openId) return;
     // The user agreed to discard an unsaved query. (A link opened without asking keeps the draft,
     // for the next time the page is opened without one.)
     if (askFirst) forget(DRAFT_KEY);
     showQuery(query, editor);
   } catch (e) {
-    showError(e, editor);
+    if (openId === state.openId) showError(e, editor);
   }
 }
 
@@ -595,18 +640,24 @@ async function save(editor, asNew) {
   }
   const body = { ...details, chart: state.chart, parameters, rowLimit: limit };
   const inPlace = state.current && canChange(state.current) && !asNew;
+  // If another query is opened before this is saved, the response is not for what is shown
+  const { selection } = state;
   try {
     const saved = inPlace
       ? await api(`queries/${state.current.id}`, body, 'PUT')
       : await api('queries', body);
-    state.current = saved;
-    state.snapshot = snapshotOf(saved);
-    forget(DRAFT_KEY);
-    setUrlQuery(saved.id);
+    if (state.selection === selection) {
+      state.current = saved;
+      // What was sent is what is saved; anything changed while saving is still unsaved
+      state.snapshot = details;
+      forget(DRAFT_KEY);
+      setUrlQuery(saved.id);
+    }
+    // The list is refreshed either way, to show the saved query
     await loadSavedQueries(editor);
     updateSaveControls(editor);
   } catch (e) {
-    showError(e, editor);
+    if (state.selection === selection) showError(e, editor);
   }
 }
 
@@ -622,6 +673,7 @@ async function deleteQuery(query, editor) {
     await api(`queries/${query.id}`, undefined, 'DELETE');
     if (state.current?.id === query.id) {
       // Keep what's in the editor, now as an unsaved query
+      state.selection += 1;
       state.current = null;
       state.snapshot = null;
       rememberDraft(editor.text());
@@ -646,7 +698,7 @@ function init() {
     doc: linkedId ? '' : (remembered(DRAFT_KEY) ?? ''),
     example: EXAMPLE_QUERY,
     validate: (text) => api('validate', { sql: text }),
-    onValidated,
+    onValidated: (result, text) => onValidated(result, text, editor),
     onRun: () => void run(editor),
     onChange: (text) => {
       if (!state.current) rememberDraft(text);

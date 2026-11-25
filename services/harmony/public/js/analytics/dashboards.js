@@ -107,6 +107,14 @@ const state = {
   justSaved: false,
   // Each query's parameters ([{name, type}]), from validating it, by query id
   queryParameters: new Map(),
+  // Whether the panels' queries are being validated to learn their parameters. Saving waits for
+  // it, since only the values of parameters the queries have are saved.
+  discovering: false,
+  // Each shown panel's parameter values as saved, by panel, kept for a panel whose query can't be
+  // validated (so its parameters aren't known, and it has no fields to change them in)
+  savedParameters: new WeakMap(),
+  // Increases with every dashboard shown, so only the latest open shows its dashboard
+  openId: 0,
   // Results already fetched, by query, parameters and limit; cleared by Refresh
   results: new Map(),
   // Increases with every refresh, so a refresh still running when another starts stops drawing
@@ -212,6 +220,11 @@ function updateControls() {
   $('saveDashboard').hidden = !editing;
   $('saveDashboardLabel').textContent = current && !owns ? 'Save a copy' : 'Save';
   $('saveDashboardAsNew').hidden = !(editing && owns);
+  // Saving keeps the values of the parameters the panels' queries have, so it waits to learn them
+  for (const id of ['saveDashboard', 'saveDashboardAsNew']) {
+    $(id).disabled = state.discovering;
+    $(id).title = state.discovering ? 'Checking the panels\' queries…' : '';
+  }
   $('cancelEdit').hidden = !editing;
   $('copyDashboardLink').hidden = !current;
   $('panelEditor').hidden = !editing;
@@ -561,6 +574,8 @@ async function refresh(force = false) {
   state.tiles = tiles.map((t, i) => ({ tile: t.tile, panel: panels[i], fillHeader: t.fillHeader }));
   grid.replaceChildren(...tiles.map((t) => t.tile));
   if (panels.length === 0) {
+    state.discovering = false;
+    updateControls();
     $('dashboardParameters').hidden = true;
     $('refreshStatus').textContent = '';
     if (!state.editing) {
@@ -574,6 +589,8 @@ async function refresh(force = false) {
 
   const queries = [...new Set(panels.map((p) => p.queryId))].map((id) => state.queries.get(id)).filter(Boolean);
   let invalid;
+  state.discovering = true;
+  updateControls();
   try {
     $('refreshStatus').textContent = 'Checking the queries…';
     const known = state.queryParameters.size;
@@ -581,10 +598,16 @@ async function refresh(force = false) {
     // The title hints list each query's parameters
     if (state.editing && state.queryParameters.size !== known && !stale()) renderPanelEditor();
   } catch (e) {
-    if (!stale()) showError(e);
+    if (!stale()) {
+      // Saving can go ahead, keeping the saved values of the queries that couldn't be checked
+      state.discovering = false;
+      updateControls();
+      showError(e);
+    }
     return;
   }
   if (stale()) return;
+  state.discovering = false;
 
   // Titles and values can be shown now the queries' parameters are known
   for (const t of tiles) t.fillHeader();
@@ -613,7 +636,10 @@ async function refresh(force = false) {
       const limit = limitFor(panel, query);
       const key = JSON.stringify([query.id, query.updatedAt, params, limit]);
       if (!state.results.has(key)) {
-        state.results.set(key, await api('query', { sql: query.sql, params, limit }));
+        const fetched = await api('query', { sql: query.sql, params, limit });
+        // A refresh started since (e.g. Refresh, which clears the cache) decides what is cached
+        if (stale()) return;
+        state.results.set(key, fetched);
       }
       if (stale()) return;
       const result = state.results.get(key);
@@ -782,13 +808,26 @@ function renderPanelEditor() {
 }
 
 /**
- * Records the dashboard as shown as the saved version: to tell whether there are unsaved changes,
- * and which values have been changed since
+ * Gets the dashboard as shown, to record as the saved version (see rememberSaved)
  */
-function rememberSaved() {
-  state.snapshot = currentSnapshot();
-  state.savedAllText = new Map(state.allText);
-  state.savedPanels = new WeakMap(state.draft.panels.map((p) => [p, { ...p, parameters: { ...p.parameters } }]));
+function savedVersion() {
+  return {
+    snapshot: currentSnapshot(),
+    allText: new Map(state.allText),
+    panels: new WeakMap(state.draft.panels.map((p) => [p, { ...p, parameters: { ...p.parameters } }])),
+  };
+}
+
+/**
+ * Records a version of the dashboard as the saved one: to tell whether there are unsaved changes,
+ * and which values have been changed since
+ *
+ * @param {object} [saved] - the version (from savedVersion), by default the dashboard as shown
+ */
+function rememberSaved(saved = savedVersion()) {
+  state.snapshot = saved.snapshot;
+  state.savedAllText = saved.allText;
+  state.savedPanels = saved.panels;
 }
 
 /**
@@ -798,10 +837,13 @@ function rememberSaved() {
  * @param {boolean} editing - whether to start in edit mode
  */
 function showDashboard(dashboard, editing) {
+  // An open still waiting for its dashboard would replace this one
+  state.openId += 1;
   state.current = dashboard;
   state.editing = editing;
   state.justSaved = false;
   state.resolvedAt = null;
+  state.savedParameters = new WeakMap();
   state.draft = {
     name: dashboard?.name ?? '',
     description: dashboard?.description ?? '',
@@ -809,7 +851,9 @@ function showDashboard(dashboard, editing) {
     // shown as one (before the snapshot, so this alone isn't an unsaved change)
     panels: (dashboard?.panels ?? []).map((p) => {
       const query = state.queries.get(p.queryId);
-      return { ...textPanel(p), display: query && !query.chart ? 'table' : p.display };
+      const panel = { ...textPanel(p), display: query && !query.chart ? 'table' : p.display };
+      state.savedParameters.set(panel, p.parameters ?? {});
+      return panel;
     }),
   };
   state.allText = new Map(Object.entries(dashboard?.parameters ?? {}).map(([k, v]) => [k, defaultToText(v)]));
@@ -834,10 +878,17 @@ function showDashboard(dashboard, editing) {
  */
 async function openDashboard(id, askFirst = true) {
   if (askFirst && !(await okToDiscard())) return;
+  // Another open, or another dashboard shown (e.g. New), while this one loads makes it stale. So
+  // does editing the dashboard shown meanwhile, which keeps those edits rather than losing them.
+  const openId = ++state.openId;
+  const { draft } = state;
+  const before = currentSnapshot();
+  const superseded = () => openId !== state.openId || state.draft !== draft || currentSnapshot() !== before;
   try {
-    showDashboard(await api(`dashboards/${encodeURIComponent(id)}`), false);
+    const dashboard = await api(`dashboards/${encodeURIComponent(id)}`);
+    if (!superseded()) showDashboard(dashboard, false);
   } catch (e) {
-    showError(e);
+    if (!superseded()) showError(e);
   }
 }
 
@@ -849,6 +900,10 @@ async function openDashboard(id, askFirst = true) {
  */
 async function save(asNew) {
   clearError();
+  if (state.discovering) {
+    $('dashboardStatus').textContent = 'Checking the panels\' queries - save again in a moment';
+    return false;
+  }
   const name = state.draft.name.trim();
   if (!name) {
     $('dashboardStatus').textContent = 'Give the dashboard a name to save it';
@@ -857,49 +912,87 @@ async function save(asNew) {
   }
   // Only the values that are set, for parameters the panels' queries have now, are kept. Times are
   // kept as written, so a relative time (now-7d) is saved as one.
+  const toSave = (value, type, where, p) => {
+    try {
+      return parameterDefault(value, type);
+    } catch (e) {
+      throw new Error(`${where} $${p}: ${e.message}`);
+    }
+  };
   const valuesToSave = (text, parameters, where) => {
     const values = {};
     for (const { name: p, type } of parameters) {
       const value = text.get(p) ?? '';
-      if (value.trim() !== '') {
-        try {
-          values[p] = parameterDefault(value, type);
-        } catch (e) {
-          throw new Error(`${where} $${p}: ${e.message}`);
-        }
-      }
+      if (value.trim() !== '') values[p] = toSave(value, type, where, p);
     }
     return values;
   };
+  // A panel whose query couldn't be validated has no known parameters, and no fields to change
+  // their values in, so it keeps the values it was saved with
+  const known = (p) => state.queryParameters.has(p.queryId);
   let panels;
   let parameters;
   try {
     panels = state.draft.panels.map((p, i) => ({
       ...p,
       title: p.title.trim() || null,
-      parameters: valuesToSave(new Map(Object.entries(p.parameters)), parametersOf(p), `Panel ${i + 1}:`),
+      parameters: known(p)
+        ? valuesToSave(new Map(Object.entries(p.parameters)), parametersOf(p), `Panel ${i + 1}:`)
+        : (state.savedParameters.get(p) ?? {}),
     }));
-    const types = new Map(state.draft.panels.flatMap((p) => parametersOf(p).map((q) => [q.name, q])));
-    parameters = valuesToSave(state.allText, [...types.values()], 'All panels:');
+    // The types the panels' queries give each parameter
+    const types = new Map();
+    for (const p of state.draft.panels) {
+      for (const { name: n, type } of parametersOf(p)) types.set(n, new Set([...(types.get(n) ?? []), type]));
+    }
+    parameters = {};
+    for (const [p, typeSet] of types) {
+      const value = state.allText.get(p) ?? '';
+      if (value.trim() !== '') {
+        const values = [...typeSet].map((type) => toSave(value, type, 'All panels:', p));
+        // Queries that give a parameter different types each convert its value when they run, so
+        // it is saved as written, meaning to each what it means now (converted to one type, it
+        // might not)
+        parameters[p] = typeSet.size === 1 ? values[0] : value;
+      }
+    }
+    // Values for all panels that only a query that couldn't be validated might use are kept too
+    if (state.draft.panels.some((p) => !known(p))) {
+      for (const [p, value] of Object.entries(state.current?.parameters ?? {})) {
+        if (!types.has(p)) parameters[p] = value;
+      }
+    }
   } catch (e) {
     showError(e);
     return false;
   }
   const body = { name, description: state.draft.description, panels, parameters };
   const inPlace = state.current && canChange(state.current) && !asNew;
+  // What is being saved: once it is, that is the saved version, even if the dashboard has been
+  // changed while saving (those changes are still unsaved). If another dashboard is opened
+  // meanwhile, the response is for one that isn't shown, so only the lists are updated.
+  const { draft } = state;
+  const submitted = savedVersion();
+  const submittedPanels = [...draft.panels];
   try {
     const saved = inPlace
       ? await api(`dashboards/${state.current.id}`, body, 'PUT')
       : await api('dashboards', body);
+    if (state.draft !== draft) {
+      await loadLists();
+      return false;
+    }
     state.current = saved;
-    rememberSaved();
+    rememberSaved(submitted);
+    submittedPanels.forEach((p, i) => state.savedParameters.set(p, panels[i].parameters));
     setUrlDashboard(saved.id);
     await loadLists();
+    if (state.draft !== draft) return false;
     state.justSaved = true;
     updateControls();
     return true;
   } catch (e) {
-    showError(e);
+    if (state.draft === draft) showError(e);
     return false;
   }
 }
@@ -928,7 +1021,7 @@ async function cancelEditing() {
     { value: 'save', label: $('saveDashboardLabel').textContent, className: 'btn-primary' },
   ]);
   if (choice === 'save') {
-    if (await save(false)) stopEditing();
+    if (await save(false) && !hasUnsavedChanges()) stopEditing();
   } else if (choice === 'discard') {
     if (state.current) {
       showDashboard(state.current, false);
@@ -984,9 +1077,10 @@ async function init() {
     state.draft.description = e.target.value;
     updateControls();
   });
-  // Saving (in place, a copy, or as new) closes the editor; if it fails, editing carries on
+  // Saving (in place, a copy, or as new) closes the editor. If it fails, or the dashboard was
+  // changed while it was being saved, editing carries on.
   const saveAndClose = async (asNew) => {
-    if (await save(asNew)) stopEditing();
+    if (await save(asNew) && !hasUnsavedChanges()) stopEditing();
   };
   $('dashboardDetails').addEventListener('submit', (e) => {
     e.preventDefault();

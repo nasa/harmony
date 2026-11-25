@@ -30,6 +30,11 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 export const isNumericType = (type) => NUMERIC_TYPE.test(type);
 export const isTemporalType = (type) => TEMPORAL_TYPE.test(type);
 
+// What identifies a value when grouping rows by it: SQL NULL is kept apart from the text "NULL",
+// while repeats of the same value are grouped. It is only a key - labels are made by valueLabel.
+const identity = (value) => (value === null || value === undefined ? 'null' : JSON.stringify(value));
+const valueLabel = (value) => (value === null || value === undefined ? 'NULL' : String(value));
+
 /**
  * Formats a number for an axis tick, tooltip or the table view, keeping fractions (unlike the
  * dashboard's count formats, which round)
@@ -149,7 +154,7 @@ export function chartData(result, spec) {
   const index = (name) => result.columns.findIndex((c) => c.name === name);
   const xIndex = index(spec.x);
   const temporal = isTemporalType(result.columns[xIndex].type);
-  const xKey = (value) => (value === null ? 'NULL' : String(value));
+  const xKey = identity;
 
   // Each distinct x value is one position, in the order the query returned them
   const positions = [];
@@ -160,6 +165,14 @@ export function chartData(result, spec) {
       positionOf.set(key, positions.length);
       positions.push(row[xIndex]);
     }
+  }
+  if (positions.length > MAX_POINTS) {
+    // Said before building the series, each of which has a value for every position
+    return {
+      positions: [], temporal, series: [], values: {}, folded: 0,
+      problem: `There are ${positions.length.toLocaleString()} values of ${spec.x} - too many to chart. `
+        + `Aggregate the query to at most ${MAX_POINTS} (e.g. with date_trunc or GROUP BY).`,
+    };
   }
   let order = positions.map((_, i) => i);
   if (temporal) {
@@ -182,8 +195,7 @@ export function chartData(result, spec) {
     const yIndex = index(spec.y[0]);
     const seriesIndex = index(spec.series);
     for (const row of result.rows) {
-      const label = row[seriesIndex] === null ? 'NULL' : String(row[seriesIndex]);
-      add(`s:${label}`, label, positionOf.get(xKey(row[xIndex])), row[yIndex]);
+      add(`s:${identity(row[seriesIndex])}`, valueLabel(row[seriesIndex]), positionOf.get(xKey(row[xIndex])), row[yIndex]);
     }
   } else {
     for (const name of spec.y) {
@@ -224,10 +236,7 @@ export function chartData(result, spec) {
     series: entries.map(([key, s]) => ({ key, label: s.label })),
     values,
     folded,
-    problem: positions.length > MAX_POINTS
-      ? `There are ${positions.length.toLocaleString()} values of ${spec.x} - too many to chart. `
-        + `Aggregate the query to at most ${MAX_POINTS} (e.g. with date_trunc or GROUP BY).`
-      : null,
+    problem: null,
   };
 }
 
@@ -277,27 +286,29 @@ function renderStat(container, result, spec, { title }) {
 export function donutData(result, spec) {
   const x = result.columns.findIndex((c) => c.name === spec.x);
   const y = result.columns.findIndex((c) => c.name === spec.y[0]);
-  const sums = new Map();
+  const sums = new Map(); // identity -> { key, label, value }
   // Rows with no value aren't part of the whole
   for (const row of result.rows.filter((r) => r[y] !== null && r[y] !== undefined)) {
-    const label = row[x] === null ? 'NULL' : String(row[x]);
-    sums.set(label, (sums.get(label) ?? 0) + Number(row[y]));
+    const id = identity(row[x]);
+    const slice = sums.get(id) ?? { key: `s:${id}`, label: valueLabel(row[x]), value: 0 };
+    slice.value += Number(row[y]);
+    sums.set(id, slice);
   }
-  const entries = [...sums.entries()];
+  const entries = [...sums.values()];
   const empty = { slices: [], total: 0, folded: 0 };
-  if (entries.some(([, v]) => v < 0)) return { ...empty, problem: `A donut can't show negative values of ${spec.y[0]}` };
-  const total = entries.reduce((sum, [, v]) => sum + v, 0);
+  if (entries.some((e) => e.value < 0)) return { ...empty, problem: `A donut can't show negative values of ${spec.y[0]}` };
+  const total = entries.reduce((sum, e) => sum + e.value, 0);
   if (total === 0) return { ...empty, problem: 'There is nothing to show: the values add up to zero' };
 
-  entries.sort((a, b) => b[1] - a[1]);
+  entries.sort((a, b) => b.value - a.value);
   const keepCount = entries.length > MAX_DONUT_SLICES ? MAX_DONUT_SLICES - 1 : entries.length;
   const kept = entries.slice(0, keepCount);
   const rest = entries.slice(keepCount);
   // Colors go by name, so a category keeps its color however its share changes
-  const colorOrder = kept.map(([label]) => label).sort((a, b) => a.localeCompare(b, [], { numeric: true }));
-  const slices = kept.map(([label, value]) => ({ key: `s:${label}`, label, value, colorIndex: colorOrder.indexOf(label) }));
+  const colorOrder = [...kept].sort((a, b) => a.label.localeCompare(b.label, [], { numeric: true }));
+  const slices = kept.map((e) => ({ ...e, colorIndex: colorOrder.indexOf(e) }));
   if (rest.length > 0) {
-    slices.push({ key: OTHER_KEY, label: `Other (${rest.length})`, value: rest.reduce((s, [, v]) => s + v, 0), colorIndex: null });
+    slices.push({ key: OTHER_KEY, label: `Other (${rest.length})`, value: rest.reduce((s, e) => s + e.value, 0), colorIndex: null });
   }
   return { slices, total, folded: rest.length, problem: null };
 }
@@ -418,6 +429,10 @@ export function renderChart(container, result, spec, { title, color }) {
   if (spec.type === 'donut') return renderDonut(container, result, spec, { title, color });
   const data = chartData(result, spec);
   if (data.problem) return data.problem;
+  // The column chart stacks up from zero, and would leave negative values out
+  if (spec.type === 'column' && Object.values(data.values).some((values) => values.some((v) => v !== null && v < 0))) {
+    return `Columns can't show negative values, and ${spec.series ? spec.y[0] : spec.y.join(', ')} has some`;
+  }
 
   const series = data.series.map((s, i) => ({
     ...s,

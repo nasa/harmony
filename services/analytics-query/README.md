@@ -100,17 +100,18 @@ Every `/api` request needs `Authorization: Bearer $ANALYTICS_QUERY_SHARED_SECRET
 |---|---|---|
 | `GET /api/schema` | | `{ tables: [{ name, columns: [{ name, type }] }], warnings, loadedAt }`. Cached for `ANALYTICS_SCHEMA_CACHE_SECONDS`. `warnings` lists timestamp columns that aren't `TIMESTAMPTZ`. |
 | `POST /api/validate` | `{ sql }` | `{ valid, errors: [{ message, position }], columns, parameters }`, always with a 200. `position` is a character offset into `sql` (or null), for marking the error in an editor. |
-| `POST /api/query` | `{ sql, params?, limit? }` | `{ columns, rows, rowCount, truncated, durationMs }`. At most `limit` rows are returned (default and maximum `ANALYTICS_QUERY_MAX_ROWS`, which `/api/schema` reports as `limits.maxRows`), whether or not the query has a LIMIT. Reading stops at the limit, so the rest of the result is never read. `truncated` says there were more. Each row is an array in column order. Timestamps are ISO 8601 UTC strings. Integers that fit in a JS number are numbers. |
+| `POST /api/query` | `{ sql, params?, limit? }` | `{ columns, rows, rowCount, truncated, durationMs }`. At most `limit` rows are returned (default and maximum `ANALYTICS_QUERY_MAX_ROWS`, which `/api/schema` reports as `limits.maxRows`), whether or not the query has a LIMIT. Reading stops at the limit, so the rest of the result is never read. `truncated` says there were more. Each row is an array in column order. Timestamps are ISO 8601 UTC strings. Integers and decimals that a JS number holds exactly are numbers, and others strings. |
 | `GET /liveness`, `GET /readiness` | | For Kubernetes. Not ready until the catalog is attached. |
 
 Errors are `{ code, message, errors }`. An invalid query or bad parameter gets a 400, a missing
-secret a 401, a query past `ANALYTICS_QUERY_TIMEOUT_MS` a 408, and a 503 means the catalog isn't
+secret a 401, a query that takes longer than `ANALYTICS_QUERY_TIMEOUT_MS` to validate and run a 408, and a 503 means the catalog isn't
 attached yet or too many queries are already running or waiting.
 
 Queries can use named parameters (`$start`) and the values are bound, never put into the SQL. A
 value is a string, number, boolean, null, or a list of one of those. DuckDB casts it to the type it
-inferred for the parameter, so an ISO string works for a timestamp. A parameter DuckDB can't infer
-a type for needs a cast, e.g. `unnest($ids::BIGINT[])`.
+inferred for the parameter, so an ISO string works for a timestamp. An integer past
+`Number.MAX_SAFE_INTEGER` is given as a string, since a JSON number that large may not be exact. A
+parameter DuckDB can't infer a type for needs a cast, e.g. `unnest($ids::BIGINT[])`.
 
 ## How queries are kept read-only
 

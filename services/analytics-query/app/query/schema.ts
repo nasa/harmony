@@ -60,6 +60,9 @@ export class SchemaCache {
 
   private loadedAtMs = 0;
 
+  // Increases with every clear(), so a load that started before one isn't cached after it
+  private generation = 0;
+
   /**
    * @param ttlSeconds - how long to keep a loaded schema
    */
@@ -73,7 +76,11 @@ export class SchemaCache {
    */
   async get(load: () => Promise<SchemaInfo>): Promise<SchemaInfo> {
     if (!this.schema || Date.now() - this.loadedAtMs > this.ttlSeconds * 1000) {
-      this.schema = await load();
+      const { generation } = this;
+      const schema = await load();
+      // Cleared while loading (e.g. the instance was recreated): return it, but load afresh next time
+      if (generation !== this.generation) return schema;
+      this.schema = schema;
       this.loadedAtMs = Date.now();
     }
     return this.schema;
@@ -84,6 +91,7 @@ export class SchemaCache {
    */
   clear(): void {
     this.schema = null;
+    this.generation += 1;
   }
 }
 

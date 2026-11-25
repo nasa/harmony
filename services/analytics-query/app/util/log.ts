@@ -28,7 +28,7 @@ const logger = winston.createLogger({
  * @param suppressStdOut - true if logs should not be written to stdout
  */
 export function configureLogToFile(filename: string, suppressStdOut = false): void {
-  const fileTransport = new winston.transports.File({ filename });
+  const fileTransport = new winston.transports.File({ filename, level: env.logLevel });
   while (suppressStdOut && logger.transports.length > 0) {
     logger.remove(logger.transports[0]);
   }

@@ -189,16 +189,25 @@ export async function createAnalyticsQuery(req: HarmonyRequest, res: Response): 
     sendError(res, 400, 'The query could not be saved', problems);
     return;
   }
-  await db.transaction(async (tx) => {
-    if (await nameIsTaken(tx, req.user, query.name)) {
-      sendError(res, 409, `You already have a saved query named "${query.name}"`);
-      return;
-    }
+  // Responds only once the transaction has committed, so a failed commit isn't reported as saved
+  const saved = await db.transaction(async (tx) => {
+    if (await nameIsTaken(tx, req.user, query.name)) return false;
     await query.save(tx);
-    req.context.logger.info(`User ${req.user} saved analytics query ${query.id} "${query.name}"`);
-    res.status(201).json(query.serialize());
+    return true;
   });
+  if (!saved) {
+    sendError(res, 409, `You already have a saved query named "${query.name}"`);
+    return;
+  }
+  req.context.logger.info(`User ${req.user} saved analytics query ${query.id} "${query.name}"`);
+  res.status(201).json(query.serialize());
 }
+
+// The database column each field of a saved query's request body is stored in
+const BODY_COLUMNS = {
+  name: 'name', description: 'description', sql: 'sql', parameters: 'parameters', chart: 'chart',
+  rowLimit: 'row_limit', shared: 'shared',
+} as const;
 
 /**
  * Express.js handler that changes a saved query - only its owner or an admin may
@@ -219,16 +228,23 @@ export async function updateAnalyticsQuery(req: HarmonyRequest, res: Response): 
     sendError(res, 400, 'The query could not be saved', problems);
     return;
   }
-  await db.transaction(async (tx) => {
-    if (await nameIsTaken(tx, query.username, query.name, query.id)) {
-      sendError(res, 409, `${query.username} already has a saved query named "${query.name}"`);
-      return;
-    }
-    const { name, description, sql, parameters, chart, row_limit, shared } = query;
-    await query.save(tx, { name, description, sql, parameters, chart, row_limit, shared });
-    req.context.logger.info(`User ${req.user} updated analytics query ${query.id} "${query.name}"`);
-    res.json(query.serialize());
+  // Only the fields in the request are written, so e.g. a request that leaves out `shared` doesn't
+  // write back the value read above over a change made since
+  const fields: { [column: string]: unknown } = {};
+  for (const [field, column] of Object.entries(BODY_COLUMNS)) {
+    if ((req.body ?? {})[field] !== undefined) fields[column] = query[column];
+  }
+  const saved = await db.transaction(async (tx) => {
+    if (await nameIsTaken(tx, query.username, query.name, query.id)) return false;
+    await query.save(tx, fields);
+    return true;
   });
+  if (!saved) {
+    sendError(res, 409, `${query.username} already has a saved query named "${query.name}"`);
+    return;
+  }
+  req.context.logger.info(`User ${req.user} updated analytics query ${query.id} "${query.name}"`);
+  res.json(query.serialize());
 }
 
 /**

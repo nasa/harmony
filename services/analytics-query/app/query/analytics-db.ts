@@ -4,6 +4,10 @@ import { Logger } from 'winston';
 import { CatalogSource, createLockedInstance, InstanceLimits, openConnection } from './catalog';
 import { BusyError, NotReadyError } from '../util/errors';
 
+// How long to keep using an expired instance after failing to replace it before trying again, so
+// a catalog that is down isn't retried on every request
+const REFRESH_RETRY_MS = 60_000;
+
 export interface AnalyticsDbOptions extends InstanceLimits {
   // How many connections may be in use at once, and how many callers may wait for one
   maxConcurrent: number;
@@ -33,6 +37,13 @@ export class AnalyticsDb {
 
   private creating: Promise<TrackedInstance> | null = null;
 
+  // When a failed replacement of an expired instance may next be tried
+  private retryRefreshAtMs = 0;
+
+  // Once closed, it stays closed: init and withConnection fail, and an instance still being created
+  // is closed rather than used
+  private closed = false;
+
   private active = 0;
 
   private waiters: (() => void)[] = [];
@@ -52,26 +63,53 @@ export class AnalyticsDb {
   /**
    * Set up the instance
    *
-   * @throws error if the catalog can't be attached
+   * @throws error if the catalog can't be attached, or the instance has been closed
    */
   async init(): Promise<void> {
     await this.instance();
   }
 
   /**
-   * Get the current instance, creating it (or replacing it, if it is too old) if needed
+   * Get the current instance, creating it if there is none yet. One that is too old is still
+   * returned while its replacement is created in the background, so queries don't wait for it.
+   *
+   * @throws error if there is no instance and one can't be created, or it has been closed
    */
   private async instance(): Promise<TrackedInstance> {
-    const { maxAgeMs } = this.options;
-    const expired = this.current && maxAgeMs > 0 && Date.now() - this.current.createdAtMs > maxAgeMs;
-    if (this.current && !expired) {
-      return this.current;
+    if (this.closed) {
+      throw new Error('The analytics DuckDB instance has been closed');
     }
-    // Only one caller creates the instance; the rest wait for it
+    if (!this.current) {
+      // Nothing to use until the first instance exists, so wait for it
+      return this.create();
+    }
+    const { maxAgeMs } = this.options;
+    const expired = maxAgeMs > 0 && Date.now() - this.current.createdAtMs > maxAgeMs;
+    if (expired && !this.creating && Date.now() >= this.retryRefreshAtMs) {
+      this.create().catch((e) => {
+        if (this.closed) return;
+        // Keep using the old instance rather than failing queries, and try again in a while
+        this.retryRefreshAtMs = Date.now() + REFRESH_RETRY_MS;
+        this.logger.error('Failed to recreate the analytics DuckDB instance, still using the old one');
+        this.logger.error(e);
+      });
+    }
+    return this.current;
+  }
+
+  /**
+   * Create an instance and make it the current one, retiring the one it replaces. Only one is
+   * created at a time; callers while it is being created get the same promise.
+   */
+  private create(): Promise<TrackedInstance> {
     this.creating ??= (async (): Promise<TrackedInstance> => {
       try {
         const startMs = Date.now();
         const instance = await createLockedInstance(this.source, this.options);
+        if (this.closed) {
+          instance.closeSync();
+          throw new Error('The analytics DuckDB instance has been closed');
+        }
         const tracked = { instance, createdAtMs: Date.now(), inUse: 0, retired: false };
         if (this.current) {
           this.retire(this.current);
@@ -86,17 +124,7 @@ export class AnalyticsDb {
         this.creating = null;
       }
     })();
-    try {
-      return await this.creating;
-    } catch (e) {
-      if (this.current) {
-        // Keep using the old instance rather than failing queries, and try again next time
-        this.logger.error('Failed to recreate the analytics DuckDB instance, still using the old one');
-        this.logger.error(e);
-        return this.current;
-      }
-      throw e;
-    }
+    return this.creating;
   }
 
   /**
@@ -172,9 +200,11 @@ export class AnalyticsDb {
   }
 
   /**
-   * Close the instance
+   * Close the instance, for good: queries still running finish first, and later calls fail as not
+   * ready
    */
   close(): void {
+    this.closed = true;
     if (this.current) {
       this.retire(this.current);
       this.current = null;

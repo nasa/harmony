@@ -412,6 +412,9 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
       expect(shared.status).to.equal(200);
       expect(shared.body.shared).to.equal(true);
       expect((await admin.get(this.frontend, res.body.id)).body.shared).to.equal(true);
+      // An update that leaves sharing out leaves it as it is
+      expect((await admin.update(this.frontend, res.body.id, { sql: 'SELECT 2' })).body.shared).to.equal(true);
+      expect((await admin.get(this.frontend, res.body.id)).body).to.include({ sql: 'SELECT 2', shared: true });
       const unshared = await admin.update(this.frontend, res.body.id, { shared: false });
       expect(unshared.body.shared).to.equal(false);
       expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);

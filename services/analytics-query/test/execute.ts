@@ -49,6 +49,14 @@ describe('executeQuery', () => {
         .and.eventually.have.nested.property('errors[0].message').that.include('whole number');
     });
 
+    it('rejects an integer too large to be exact as a number, but binds it given as a string', async () => {
+      await expect(run('SELECT $id::BIGINT', { id: 2 ** 60 })).to.be.rejectedWith(RequestValidationError)
+        .and.eventually.have.nested.property('errors[0].message').that.include('give it as a string');
+      await expect(run('SELECT unnest($ids::BIGINT[])', { ids: [1, 2 ** 60] })).to.be.rejectedWith(RequestValidationError);
+      const big = String(2n ** 60n + 1n);
+      expect((await run('SELECT $id::BIGINT', { id: big })).rows[0][0]).to.equal(big);
+    });
+
     it('rejects a list for a scalar parameter', async () => {
       await expect(run('SELECT * FROM jobs WHERE id = $id', { id: [1] })).to.be.rejectedWith(RequestValidationError);
     });
@@ -105,6 +113,19 @@ describe('executeQuery', () => {
       // digits looks like an AWS account id to git-secrets.)
       const result = await run('SELECT 42::BIGINT, 1::HUGEINT << 100, 1.25::DECIMAL(10, 2), sum(id) FROM jobs');
       expect(result.rows[0]).to.eql([42, String(2n ** 100n), 1.25, (JOB_COUNT * (JOB_COUNT - 1)) / 2]);
+    });
+
+    it('returns a decimal a number would round as a string', async () => {
+      // 2^60 + 0.25, computed as above rather than written out
+      const result = await run(`SELECT ((1::HUGEINT << 60)::DECIMAL(38, 2) + 0.25)::DECIMAL(38, 2),
+        0.1::DECIMAL(10, 4), -2.50::DECIMAL(5, 2)`);
+      expect(result.rows[0]).to.eql([`${2n ** 60n}.25`, 0.1, -2.5]);
+    });
+
+    it('returns TIMESTAMPTZ values past the JS Date range with an extended year', async () => {
+      const result = await run(`SELECT TIMESTAMPTZ '290000-01-02 03:04:05.000006+00' AS a,
+        TIMESTAMPTZ '2026-11-18 12:34:56+00' AS b`);
+      expect(result.rows[0]).to.eql(['+290000-01-02T03:04:05.000006Z', '2026-11-18T12:34:56.000Z']);
     });
 
     it('keeps columns whose names repeat', async () => {

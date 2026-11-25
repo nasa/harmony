@@ -4,7 +4,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { Logger } from 'winston';
 
 import { AnalyticsDb } from '../query/analytics-db';
-import { executeQuery, ParameterValue, QueryLimits } from '../query/execute';
+import { executeQuery, ParameterValue, QueryLimits, withDeadline } from '../query/execute';
 import { loadSchema, SchemaCache, SchemaInfo, tableNames } from '../query/schema';
 import { validateSql } from '../query/validate';
 import { HttpError, RequestValidationError, UnauthorizedError } from '../util/errors';
@@ -141,15 +141,18 @@ export default function router(options: RouterOptions): express.Router {
       params = requestParams(req.body);
       const maxRows = requestLimit(req.body, limits.maxRows);
       const allowed = tableNames(await getSchema());
-      const queryResult = await db.withConnection(async (conn) => {
+      // The time limit covers validating the query as well as running it, since preparing it can
+      // take a while too (e.g. loading Iceberg table metadata). It starts once the query has a
+      // connection, not while it waits for one.
+      const queryResult = await db.withConnection((conn) => withDeadline(conn, limits.timeoutMs, async (deadline) => {
         // Validated on the same connection it runs on, every time - never trust an earlier check
         const validation = await validateSql(conn, sql, allowed);
         if (!validation.valid) {
           throw new RequestValidationError('The query is not valid', validation.errors);
         }
         // The query runs without a LIMIT of its own being needed: reading stops at the limit
-        return executeQuery(conn, sql, params, { ...limits, maxRows });
-      });
+        return executeQuery(conn, sql, params, { ...limits, maxRows }, deadline);
+      }));
       logger.info(`Analytics query by ${user}: success`, {
         user, sql, params, limit: req.body?.limit, outcome: 'success', rowCount: queryResult.rowCount,
         truncated: queryResult.truncated, durationMs: Date.now() - startMs,

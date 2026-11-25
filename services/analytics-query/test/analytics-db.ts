@@ -29,13 +29,15 @@ describe('AnalyticsDb', () => {
     let running = 0;
     let maxRunning = 0;
     const gate = deferred();
+    const twoRunning = deferred();
     const calls = [1, 2, 3, 4, 5].map(() => db.withConnection(async () => {
       running += 1;
       maxRunning = Math.max(maxRunning, running);
+      if (running === 2) twoRunning.resolve();
       await gate.promise;
       running -= 1;
     }));
-    await new Promise((r) => setTimeout(r, 200));
+    await twoRunning.promise;
     expect(running).to.equal(2);
     gate.resolve();
     await Promise.all(calls);
@@ -75,18 +77,41 @@ describe('AnalyticsDb', () => {
     db.close();
   });
 
-  it('recreates the instance once it is older than maxAgeMs, and says so', async () => {
+  it('recreates the instance once it is older than maxAgeMs, in the background, and says so', async () => {
     const db = fixtureDb({ maxAgeMs: 50 });
+    const recreatedAgain = deferred();
     let recreated = 0;
-    db.onRecreate = (): void => { recreated += 1; };
+    db.onRecreate = (): void => {
+      recreated += 1;
+      if (recreated === 2) recreatedAgain.resolve();
+    };
     await db.init();
     expect(recreated).to.equal(1);
     await new Promise((r) => setTimeout(r, 100));
+    // Runs on the old instance rather than waiting for the new one
     const n = await db.withConnection(async (conn) =>
       (await conn.runAndReadAll('SELECT count(*)::INTEGER AS n FROM jobs')).getRowObjectsJson()[0].n);
     expect(n).to.be.greaterThan(0);
+    await recreatedAgain.promise;
     expect(recreated).to.equal(2);
     db.close();
+  });
+
+  it('fails as not ready once closed', async () => {
+    const db = fixtureDb();
+    await db.init();
+    db.close();
+    expect(db.isReady).to.be.false;
+    await expect(db.init()).to.be.rejectedWith(/closed/);
+    await expect(db.withConnection(async () => {})).to.be.rejectedWith(NotReadyError);
+  });
+
+  it('does not use an instance that was still being created when it was closed', async () => {
+    const db = fixtureDb();
+    const init = db.init();
+    db.close();
+    await expect(init).to.be.rejectedWith(/closed/);
+    expect(db.isReady).to.be.false;
   });
 
   it('reports a catalog that cannot be attached as not ready', async () => {
