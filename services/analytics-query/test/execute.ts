@@ -55,6 +55,9 @@ describe('executeQuery', () => {
       await expect(run('SELECT unnest($ids::BIGINT[])', { ids: [1, 2 ** 60] })).to.be.rejectedWith(RequestValidationError);
       const big = String(2n ** 60n + 1n);
       expect((await run('SELECT $id::BIGINT', { id: big })).rows[0][0]).to.equal(big);
+      // As the page sends a list with one such value: every element as text
+      const rows = (await run('SELECT unnest($ids::BIGINT[]) AS id', { ids: ['1', big] })).rows.map((r) => r[0]);
+      expect(rows).to.eql([1, big]);
     });
 
     it('rejects a list for a scalar parameter', async () => {

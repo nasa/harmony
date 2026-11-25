@@ -204,6 +204,9 @@ describe('/admin/analytics/dashboards', function () {
       expect(res.body).to.include({ name: 'Jobs', description: 'Jobs and work items' });
       expect(res.body.panels).to.eql([{ queryId: 2, title: null, display: 'table', width: 'half', limit: null, parameters: {} }]);
       expect(res.body.parameters).to.eql(jobsDashboard.parameters);
+      const stored = (await admin.get(this.frontend, dashboardId)).body;
+      expect(stored).to.include({ name: 'Jobs', description: 'Jobs and work items' });
+      expect(stored.parameters).to.eql(jobsDashboard.parameters);
     });
 
     it('lets an admin change another admin\'s, keeping its owner', async function () {

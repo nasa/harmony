@@ -134,10 +134,15 @@ export async function updateAnalyticsDashboard(req: HarmonyRequest, res: Respons
     sendError(res, 400, 'The dashboard could not be saved', problems);
     return;
   }
+  // Only the fields in the request are written, so one it leaves out isn't written back with the
+  // value read above, over a change made since
+  const fields: { [field: string]: unknown } = {};
+  for (const field of ['name', 'description', 'panels', 'parameters']) {
+    if ((req.body ?? {})[field] !== undefined) fields[field] = dashboard[field];
+  }
   const saved = await db.transaction(async (tx) => {
     if (await dashboardNameIsTaken(tx, dashboard.username, dashboard.name, dashboard.id)) return false;
-    const { name, description, panels, parameters } = dashboard;
-    await dashboard.save(tx, { name, description, panels, parameters });
+    await dashboard.save(tx, fields);
     return true;
   });
   if (!saved) {

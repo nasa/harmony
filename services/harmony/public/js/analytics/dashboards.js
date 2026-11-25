@@ -110,6 +110,9 @@ const state = {
   // Whether the panels' queries are being validated to learn their parameters. Saving waits for
   // it, since only the values of parameters the queries have are saved.
   discovering: false,
+  // Whether a save is waiting for its response. Another isn't started meanwhile, so an older
+  // response can't record its version as saved after a newer one.
+  saving: false,
   // Each shown panel's parameter values as saved, by panel, kept for a panel whose query can't be
   // validated (so its parameters aren't known, and it has no fields to change them in)
   savedParameters: new WeakMap(),
@@ -220,9 +223,10 @@ function updateControls() {
   $('saveDashboard').hidden = !editing;
   $('saveDashboardLabel').textContent = current && !owns ? 'Save a copy' : 'Save';
   $('saveDashboardAsNew').hidden = !(editing && owns);
-  // Saving keeps the values of the parameters the panels' queries have, so it waits to learn them
+  // Saving keeps the values of the parameters the panels' queries have, so it waits to learn them,
+  // and one save at a time
   for (const id of ['saveDashboard', 'saveDashboardAsNew']) {
-    $(id).disabled = state.discovering;
+    $(id).disabled = state.discovering || state.saving;
     $(id).title = state.discovering ? 'Checking the panels\' queries…' : '';
   }
   $('cancelEdit').hidden = !editing;
@@ -538,12 +542,15 @@ function renderPanelResult(body, panel, query, result) {
  * Validates each of the panels' queries, to learn their parameters
  *
  * @param {Array<object>} queries - the saved queries
+ * @param {function(): boolean} stale - whether the refresh this is for has been superseded, after
+ *   which what it learns isn't kept (e.g. Refresh clears the parameters and reloads the queries)
  * @returns {Promise<Map<number, string>>} the problem with each query that isn't valid, by id
  */
-async function learnParameters(queries) {
+async function learnParameters(queries, stale) {
   const problems = new Map();
   await eachLimited(queries.filter((q) => !state.queryParameters.has(q.id)), MAX_PARALLEL_QUERIES, async (query) => {
     const validation = await api('validate', { sql: query.sql });
+    if (stale()) return;
     if (validation.valid) {
       state.queryParameters.set(query.id, validation.parameters);
     } else {
@@ -594,7 +601,7 @@ async function refresh(force = false) {
   try {
     $('refreshStatus').textContent = 'Checking the queries…';
     const known = state.queryParameters.size;
-    invalid = await learnParameters(queries);
+    invalid = await learnParameters(queries, stale);
     // The title hints list each query's parameters
     if (state.editing && state.queryParameters.size !== known && !stale()) renderPanelEditor();
   } catch (e) {
@@ -899,6 +906,9 @@ async function openDashboard(id, askFirst = true) {
  * @returns {Promise<boolean>} whether it was saved
  */
 async function save(asNew) {
+  // One save at a time, whichever way it was asked for (Save, Enter, Save as new, or saving on
+  // leaving the editor)
+  if (state.saving) return false;
   clearError();
   if (state.discovering) {
     $('dashboardStatus').textContent = 'Checking the panels\' queries - save again in a moment';
@@ -940,15 +950,24 @@ async function save(asNew) {
         ? valuesToSave(new Map(Object.entries(p.parameters)), parametersOf(p), `Panel ${i + 1}:`)
         : (state.savedParameters.get(p) ?? {}),
     }));
-    // The types the panels' queries give each parameter
+    // The types the panels' queries give each parameter: of every panel that has it, and of the
+    // ones that would use the value for all panels, not setting their own
     const types = new Map();
+    const inheriting = new Map();
+    const addType = (map, n, type) => map.set(n, new Set([...(map.get(n) ?? []), type]));
     for (const p of state.draft.panels) {
-      for (const { name: n, type } of parametersOf(p)) types.set(n, new Set([...(types.get(n) ?? []), type]));
+      for (const { name: n, type } of parametersOf(p)) {
+        addType(types, n, type);
+        if ((p.parameters[n] ?? '').trim() === '') addType(inheriting, n, type);
+      }
     }
     parameters = {};
-    for (const [p, typeSet] of types) {
+    for (const [p, allTypes] of types) {
       const value = state.allText.get(p) ?? '';
       if (value.trim() !== '') {
+        // Checked as the panels that use it read it. One that every panel overrides is still
+        // saved (a panel uses it once its own is cleared), checked as any of them would read it.
+        const typeSet = inheriting.get(p) ?? allTypes;
         const values = [...typeSet].map((type) => toSave(value, type, 'All panels:', p));
         // Queries that give a parameter different types each convert its value when they run, so
         // it is saved as written, meaning to each what it means now (converted to one type, it
@@ -974,6 +993,8 @@ async function save(asNew) {
   const { draft } = state;
   const submitted = savedVersion();
   const submittedPanels = [...draft.panels];
+  state.saving = true;
+  updateControls();
   try {
     const saved = inPlace
       ? await api(`dashboards/${state.current.id}`, body, 'PUT')
@@ -994,6 +1015,9 @@ async function save(asNew) {
   } catch (e) {
     if (state.draft === draft) showError(e);
     return false;
+  } finally {
+    state.saving = false;
+    updateControls();
   }
 }
 

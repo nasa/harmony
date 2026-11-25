@@ -97,6 +97,25 @@ describe('AnalyticsDb', () => {
     db.close();
   });
 
+  it('keeps an old instance open for a query that got it just before it was replaced', async () => {
+    const db = fixtureDb({ maxAgeMs: 50 });
+    const replaced = deferred();
+    let recreated = 0;
+    db.onRecreate = (): void => {
+      recreated += 1;
+      if (recreated === 2) replaced.resolve();
+    };
+    await db.init();
+    await new Promise((r) => setTimeout(r, 100));
+    // Gets the expired instance (starting its replacement), and only uses it once it is replaced
+    const n = await db.withConnection(async (conn) => {
+      await replaced.promise;
+      return (await conn.runAndReadAll('SELECT count(*)::INTEGER AS n FROM jobs')).getRowObjectsJson()[0].n;
+    });
+    expect(n).to.be.greaterThan(0);
+    db.close();
+  });
+
   it('fails as not ready once closed', async () => {
     const db = fixtureDb();
     await db.init();

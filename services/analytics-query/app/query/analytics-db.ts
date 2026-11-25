@@ -66,22 +66,30 @@ export class AnalyticsDb {
    * @throws error if the catalog can't be attached, or the instance has been closed
    */
   async init(): Promise<void> {
-    await this.instance();
+    this.unreserve(await this.reserve());
   }
 
   /**
-   * Get the current instance, creating it if there is none yet. One that is too old is still
-   * returned while its replacement is created in the background, so queries don't wait for it.
+   * Get the current instance, counted as in use, creating it if there is none yet. One that is too
+   * old is still returned while its replacement is created in the background, so queries don't
+   * wait for it. It is counted before this returns, since a replacement finishing while the caller
+   * waits to resume would otherwise close it. Release it with unreserve.
    *
    * @throws error if there is no instance and one can't be created, or it has been closed
    */
-  private async instance(): Promise<TrackedInstance> {
+  private async reserve(): Promise<TrackedInstance> {
     if (this.closed) {
       throw new Error('The analytics DuckDB instance has been closed');
     }
     if (!this.current) {
-      // Nothing to use until the first instance exists, so wait for it
-      return this.create();
+      // Nothing to use until the first instance exists, so wait for it. Replacing it needs another
+      // to be created, which can't have happened by the time this resumes - but close() can have.
+      const tracked = await this.create();
+      if (tracked.retired) {
+        throw new Error('The analytics DuckDB instance has been closed');
+      }
+      tracked.inUse += 1;
+      return tracked;
     }
     const { maxAgeMs } = this.options;
     const expired = maxAgeMs > 0 && Date.now() - this.current.createdAtMs > maxAgeMs;
@@ -94,7 +102,18 @@ export class AnalyticsDb {
         this.logger.error(e);
       });
     }
+    this.current.inUse += 1;
     return this.current;
+  }
+
+  /**
+   * Release an instance from reserve, closing it if it has been replaced and nothing else uses it
+   */
+  private unreserve(tracked: TrackedInstance): void {
+    tracked.inUse -= 1;
+    if (tracked.retired && tracked.inUse === 0) {
+      tracked.instance.closeSync();
+    }
   }
 
   /**
@@ -177,22 +196,18 @@ export class AnalyticsDb {
     try {
       let tracked: TrackedInstance;
       try {
-        tracked = await this.instance();
+        tracked = await this.reserve();
       } catch (e) {
         this.logger.error(e);
         throw new NotReadyError();
       }
-      tracked.inUse += 1;
       let conn: DuckDBConnection | null = null;
       try {
         conn = await openConnection(tracked.instance);
         return await fn(conn);
       } finally {
         conn?.closeSync();
-        tracked.inUse -= 1;
-        if (tracked.retired && tracked.inUse === 0) {
-          tracked.instance.closeSync();
-        }
+        this.unreserve(tracked);
       }
     } finally {
       this.release();

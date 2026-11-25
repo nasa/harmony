@@ -116,7 +116,11 @@ export function parameterValue(text, type, now = Date.now()) {
   if (type.endsWith('[]')) {
     if (text.trim() === '') return null;
     const elementType = type.slice(0, -2);
-    return text.split(',').map((part) => parameterValue(part.trim(), elementType, now));
+    const values = text.split(',').map((part) => parameterValue(part.trim(), elementType, now));
+    // A list is bound as one type, so if any integer is too large for a number, all are text
+    return INTEGER_TYPE.test(elementType) && values.some((v) => typeof v === 'string')
+      ? values.map((v) => (v === null ? v : String(v)))
+      : values;
   }
   // A relative time (e.g. now-7d) is resolved now, so a saved query always means the latest period
   if (TIME_TYPE.test(type) && isRelative(text)) {
@@ -133,10 +137,12 @@ export function parameterValue(text, type, now = Date.now()) {
     if (!Number.isFinite(n) || (INTEGER_TYPE.test(type) && !Number.isInteger(n))) {
       throw new Error(`"${text}" is not a valid ${type}`);
     }
-    // Past 2^53 a number may not be the one entered (2^53 + 1 becomes 2^53), so it would be run,
-    // and saved, as something else
+    // Past 2^53 a number may not be the one entered (2^53 + 1 becomes 2^53), so a whole number
+    // written out is kept as text, which the service casts exactly (and is saved as written)
     if (INTEGER_TYPE.test(type) && !Number.isSafeInteger(n)) {
-      throw new Error(`"${text}" is too large to use exactly (the most is ±${Number.MAX_SAFE_INTEGER.toLocaleString()})`);
+      const digits = text.trim();
+      if (/^-?\d+$/.test(digits)) return digits;
+      throw new Error(`"${text}" is too large to use exactly - write it out in full`);
     }
     return n;
   }
