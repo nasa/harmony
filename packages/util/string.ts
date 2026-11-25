@@ -93,7 +93,7 @@ export function isFloat(value: string): boolean {
  * @returns true if it is a boolean and false otherwise
  */
 export function isBoolean(value: string): boolean {
-  return /^true|false$/i.test(value);
+  return /^(true|false)$/i.test(value);
 }
 
 /**

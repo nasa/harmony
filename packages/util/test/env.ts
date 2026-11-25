@@ -20,7 +20,8 @@ describe('HarmonyEnv', function () {
   describe('When the environment is valid', function () {
     before(async function () {
       this.dotEnvFile = await tmp.file();
-      const envContent = 'DATABASE_TYPE=cassandra\nAWS_DEFAULT_REGION=us-west-0';
+      const envContent = 'DATABASE_TYPE=cassandra\nAWS_DEFAULT_REGION=us-west-0\n'
+        + 'TRUE_PREFIXED_VALUE=true-color\nFALSE_SUFFIXED_VALUE=always-false';
       await fs.writeFile(this.dotEnvFile.path, envContent, 'utf8');
       this.validEnv = new HarmonyEnv(undefined, this.dotEnvFile.path);
     });
@@ -46,6 +47,11 @@ describe('HarmonyEnv', function () {
 
     it('parses booleans from text', function () {
       expect(this.validEnv.textLogger).to.eql(true);
+    });
+
+    it('does not convert strings that merely start with true or end with false to booleans', function () {
+      expect(this.validEnv.truePrefixedValue).to.eql('true-color');
+      expect(this.validEnv.falseSuffixedValue).to.eql('always-false');
     });
 
     it('overrides util env-defaults with values read from process.env', function () {
