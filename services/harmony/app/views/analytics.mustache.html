@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/css/eui.min.css" />
+  <link rel="stylesheet" href="/css/default.css" />
+  <!-- The chart styles (.viz-*) the dashboard's chart kit uses -->
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/analytics.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <script language="javascript" id="_fed_an_ua_tag"
+    src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=NASA&subagency=GSFC&dclink=true"
+    defer></script>
+  <script type="module" src="/js/analytics/index.js"></script>
+  <title>Harmony Analytics</title>
+</head>
+
+<body class="d-flex flex-column h-100">
+  {{> banner}}
+  <main class="container-fluid pt-4 pb-5 flex-grow-1 analytics" id="analytics" data-username="{{username}}"
+    data-is-admin="{{isAdmin}}">
+    {{> analytics-tabs}}
+    <header class="analytics-header mb-3">
+      <div>
+        <h1 class="h3 mb-1">Analytics</h1>
+        <p class="small text-muted mb-0">Read-only SQL (DuckDB dialect) against the Harmony Iceberg analytics tables,
+          which are updated from the jobs database every few hours.</p>
+      </div>
+      <p class="small mb-0" id="schemaStatus" role="status" aria-live="polite">Loading tables…</p>
+    </header>
+
+    <div id="schemaWarnings" class="alert alert-warning" role="alert" hidden></div>
+
+    <div class="analytics-layout">
+      <aside class="schema-panel" aria-label="Saved queries and tables">
+        <section class="saved-queries" aria-labelledby="savedHeading">
+          <div class="panel-heading-row">
+            <h2 class="panel-heading mb-0" id="savedHeading">Saved queries</h2>
+            <button type="button" class="btn btn-sm btn-link p-0" id="newQuery">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i> New
+            </button>
+          </div>
+          <label class="visually-hidden" for="savedFilter">Filter saved queries</label>
+          <input type="search" id="savedFilter" class="form-control form-control-sm mb-2"
+            placeholder="Filter saved queries">
+          <ul id="savedList" class="saved-list"></ul>
+          <p id="savedEmpty" class="small text-muted" hidden>No saved queries yet.</p>
+        </section>
+
+        <h2 class="panel-heading mt-3" id="schemaHeading">Tables</h2>
+        <label class="visually-hidden" for="schemaFilter">Filter tables and columns</label>
+        <input type="search" id="schemaFilter" class="form-control form-control-sm mb-2"
+          placeholder="Filter tables and columns">
+        <p class="small text-muted mb-2">Select a name to insert it into the query.</p>
+        <div id="schemaTree" class="schema-tree"></div>
+      </aside>
+
+      <section class="query-panel" aria-label="Query">
+        <form class="query-details" id="queryDetails">
+          <div class="query-details-row">
+            <label class="visually-hidden" for="queryName">Query name</label>
+            <input type="text" id="queryName" class="form-control form-control-sm query-name" maxlength="255"
+              placeholder="Untitled query">
+            <label class="share-query small mb-0" for="queryShared"
+              title="Shared queries can be seen and run by every user of this page. Private ones only by you.">
+              <input type="checkbox" id="queryShared"> Share with other users
+            </label>
+            <button type="submit" class="btn btn-sm btn-outline-primary" id="saveQuery">
+              <i class="bi bi-save" aria-hidden="true"></i> <span id="saveLabel">Save</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="saveAsNew" hidden>Save as new</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="copyLink" hidden>
+              <i class="bi bi-link-45deg" aria-hidden="true"></i> Copy link
+            </button>
+            <span class="small text-muted" id="saveStatus" role="status" aria-live="polite"></span>
+          </div>
+          <label class="visually-hidden" for="queryDescription">Description</label>
+          <textarea id="queryDescription" class="form-control form-control-sm query-description" rows="1"
+            maxlength="4096" placeholder="Description (optional)"></textarea>
+        </form>
+
+        <label class="visually-hidden" for="editor">SQL query</label>
+        <div id="editor" class="sql-editor"></div>
+
+        <div class="query-toolbar">
+          <button type="button" class="btn btn-primary btn-sm" id="runQuery">
+            <i class="bi bi-play-fill" aria-hidden="true"></i> Run
+          </button>
+          <span class="small text-muted"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd></span>
+          <label class="row-limit small mb-0" for="rowLimit">Row limit
+            <input type="number" id="rowLimit" class="form-control form-control-sm" value="10" min="1" step="1"
+              inputmode="numeric" aria-describedby="rowLimitHelp">
+          </label>
+          <span class="visually-hidden" id="rowLimitHelp">The most rows to return, whether or not the query has a
+            LIMIT</span>
+          <span class="small validation-status" id="validationStatus" role="status" aria-live="polite"></span>
+        </div>
+
+        <form id="parameters" class="parameters" hidden>
+          <div class="panel-heading-row">
+            <h2 class="panel-heading mb-0">Parameters</h2>
+            <button type="button" class="btn btn-sm btn-link p-0" id="timeHelp" aria-haspopup="dialog">
+              <i class="bi bi-question-circle" aria-hidden="true"></i> Relative times
+            </button>
+          </div>
+          <p class="small text-muted mb-2">Times are ISO 8601 (e.g. 2026-11-01T00:00:00Z) or relative to when the
+            query runs (e.g. now-7d, or now/d for the start of today, in UTC). Separate list values with commas. Leave
+            a value empty for NULL.</p>
+          <div class="parameter-grid" id="parameterFields"></div>
+        </form>
+
+        <div id="queryError" class="alert alert-danger" role="alert" hidden></div>
+
+        <section class="results" id="results" aria-labelledby="resultsHeading" hidden>
+          <div class="results-header">
+            <h2 class="panel-heading mb-0" id="resultsHeading">Results</h2>
+            <span class="small text-muted" id="resultsSummary"></span>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="downloadCsv">
+              <i class="bi bi-download" aria-hidden="true"></i> Download CSV
+            </button>
+          </div>
+          <div id="truncatedWarning" class="alert alert-warning small py-2" role="status" hidden></div>
+
+          <form class="chart-controls" id="chartControls" aria-label="Chart">
+            <label for="chartType">Chart</label>
+            <select id="chartType" class="form-control form-control-sm w-auto">
+              <option value="">None</option>
+              <option value="column">Columns</option>
+              <option value="line">Lines</option>
+              <option value="stat">Single number</option>
+              <option value="donut">Donut</option>
+            </select>
+            <span class="chart-axis-controls" id="chartAxisControls" hidden>
+              <span class="chart-control" id="chartXControl">
+                <label for="chartX" id="chartXLabel">x axis</label>
+                <select id="chartX" class="form-control form-control-sm w-auto"></select>
+              </span>
+              <fieldset class="chart-y" id="chartY">
+                <legend class="chart-y-legend">Values</legend>
+                <span id="chartYOptions"></span>
+              </fieldset>
+              <span class="chart-control" id="chartSeriesControl">
+                <label for="chartSeries">Series by</label>
+                <select id="chartSeries" class="form-control form-control-sm w-auto"></select>
+              </span>
+            </span>
+          </form>
+          <p id="chartProblem" class="small text-muted mb-2" role="status" hidden></p>
+          <div id="chartCard" class="viz-card analytics-chart mb-3" hidden></div>
+          <div class="results-table-wrap">
+            <table class="table table-sm results-table" id="resultsTable"></table>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    {{> analytics-time-help}}
+
+    <!-- Confirms discarding changes or deleting a saved query -->
+    <dialog id="confirmDialog" class="confirm-dialog" aria-labelledby="confirmMessage">
+      <form method="dialog">
+        <p id="confirmMessage"></p>
+        <!-- The buttons for the choices, added when the dialog is shown (see chooseAction in common.js) -->
+        <div class="confirm-actions" id="confirmActions"></div>
+      </form>
+    </dialog>
+  </main>
+  <div class="container-fluid pb-3 small text-muted">Harmony {{version}}</div>
+</body>
+
+</html>

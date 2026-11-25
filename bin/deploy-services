@@ -7,6 +7,7 @@ source "./services/work-scheduler/env-defaults"
 source "./services/work-updater/env-defaults"
 source "./services/cron-service/env-defaults"
 source "./services/work-failer/env-defaults"
+source "./services/analytics-query/env-defaults"
 source "packages/util/env-defaults"
 source "./services/harmony/env-defaults"
 source ".env"
@@ -19,6 +20,12 @@ if [ "$current_context" != "colima" ] && [ "$current_context" != "docker-desktop
   echo 'ERROR: Attempting to use a non-local k8s context while deploying to a development environment.'
   echo "$current_context"
   exit 1
+fi
+
+# When harmony runs in k8s it reaches the analytics query service through its k8s service, not the
+# localhost port bin/start-dev-services uses
+if [ ! "$LOCAL_DEV" = true ]; then
+  export ANALYTICS_QUERY_URL="http://harmony-analytics-query:${PORT:-3000}"
 fi
 
 . ./bin/create-k8s-config-maps-and-secrets
@@ -59,6 +66,14 @@ if [ ! "$LOCAL_DEV" = true ]; then
   file="services/work-failer/config/service-template.yaml"
   if [ ! -f "$file" ]; then
     echo "work failer template was not found."
+    exit 1
+  fi
+  envsubst < $file | kubectl apply -f - -n harmony
+
+  # create the analytics query service
+  file="services/analytics-query/config/service-template.yaml"
+  if [ ! -f "$file" ]; then
+    echo "analytics query template was not found."
     exit 1
   fi
   envsubst < $file | kubectl apply -f - -n harmony

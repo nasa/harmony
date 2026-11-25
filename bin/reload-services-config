@@ -8,3 +8,8 @@ source ".env"
 
 . ./bin/create-k8s-config-maps-and-secrets
 kubectl rollout restart deployment harmony -n harmony
+# The analytics query service reads analytics-query-env and analytics-query-secrets (its shared
+# secret, which harmony must match), so restart it too, if it is deployed (it isn't with LOCAL_DEV=true)
+if kubectl get deployment harmony-analytics-query -n harmony > /dev/null 2>&1; then
+  kubectl rollout restart deployment harmony-analytics-query -n harmony
+fi

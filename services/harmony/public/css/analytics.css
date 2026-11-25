@@ -1,0 +1,916 @@
+/* Admin analytics query page. Colors are referenced by role through these tokens, matching the
+   admin dashboard's (dashboard.css). */
+.analytics {
+  --an-surface: #fcfcfb;
+  --an-page: #f9f9f7;
+  --an-text-primary: #0b0b0b;
+  --an-text-secondary: #52514e;
+  --an-text-muted: #898781;
+  --an-border: rgba(11, 11, 11, 0.12);
+  --an-accent: #2a78d6;
+  --an-error: #d03b3b;
+  --an-ok: #006300;
+  /* The chart kit's tokens (as in dashboard.css), with all eight categorical slots: query
+     results can have more series than the dashboard's charts. Validated with the dataviz
+     palette checks; the slots below 3:1 against the surface (3, 4, 5) are covered by the
+     chart's table view and the results table. */
+  --viz-surface: #fcfcfb;
+  --viz-page: #f9f9f7;
+  --viz-text-primary: #0b0b0b;
+  --viz-text-secondary: #52514e;
+  --viz-text-muted: #898781;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-border: rgba(11, 11, 11, 0.1);
+  --viz-neutral: #898781;
+  --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+  --viz-series-3: #1baf7a;
+  --viz-series-4: #eda100;
+  --viz-series-5: #e87ba4;
+  --viz-series-6: #008300;
+  --viz-series-7: #6250d6;
+  --viz-series-8: #e34948;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--an-text-primary);
+}
+
+/* The EUI stylesheet predates Bootstrap 5's visually-hidden utility */
+.analytics .visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.analytics [hidden] {
+  display: none !important;
+}
+
+.analytics-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.analytics-layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 991px) {
+  .analytics-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.panel-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Tables and columns */
+.schema-panel {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+.schema-tree details {
+  margin-bottom: 0.15rem;
+}
+
+.schema-tree summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.schema-tree ul {
+  list-style: none;
+  margin: 0.15rem 0 0.4rem;
+  padding-left: 1.1rem;
+}
+
+.schema-tree li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.schema-tree .insert-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--an-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-align: left;
+  cursor: pointer;
+}
+
+.schema-tree .insert-name:hover,
+.schema-tree .insert-name:focus-visible {
+  text-decoration: underline;
+}
+
+.schema-tree .column-type {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Editor */
+.sql-editor {
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.sql-editor .cm-editor {
+  min-height: 12rem;
+  max-height: 50vh;
+  font-size: 0.875rem;
+}
+
+.sql-editor .cm-editor.cm-focused {
+  outline: 2px solid var(--an-accent);
+  outline-offset: -1px;
+}
+
+.sql-editor .cm-scroller {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.query-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.validation-status.is-valid {
+  color: var(--an-ok);
+}
+
+.validation-status.is-invalid {
+  color: var(--an-error);
+}
+
+/* Parameters */
+.parameters {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Each field is as wide as its label and input need (rather than an equal grid column, which
+   wrapped long labels like "$start TIMESTAMP WITH TIME ZONE · UTC" and cut off date-times), and
+   fields wrap onto more lines when they don't fit side by side */
+.parameter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 1.5rem;
+}
+
+.parameter-grid > div {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.parameter-grid label {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+}
+
+/* Bootstrap's .form-control is full width; give each kind of input the width its values need */
+.parameter-grid .form-control {
+  width: 14rem;
+  max-width: 100%;
+}
+
+.parameter-grid input[type="datetime-local"] {
+  /* Wide enough for the date, the time to the second, and the picker button */
+  width: auto;
+  min-width: 16.5rem;
+}
+
+.parameter-grid input[type="date"] {
+  width: auto;
+  min-width: 10.5rem;
+}
+
+.parameter-grid .parameter-type {
+  color: var(--an-text-muted);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Errors */
+.query-error-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.query-error-list button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Results */
+.results-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.results-header #downloadCsv {
+  margin-left: auto;
+}
+
+.results-table-wrap {
+  /* As wide as the table, up to the page width (then it scrolls) */
+  width: fit-content;
+  max-width: 100%;
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+}
+
+.results-table {
+  /* Bootstrap's .table is full width, which spreads a few columns across the page - size each
+     column to its contents instead */
+  width: auto;
+  margin-bottom: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.results-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--an-page);
+  white-space: nowrap;
+  border-top: 0;
+}
+
+.results-table .column-type {
+  display: block;
+  color: var(--an-text-muted);
+  font-weight: normal;
+  font-size: 0.7rem;
+}
+
+.results-table td {
+  white-space: nowrap;
+  max-width: 40rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.results-table td.numeric,
+.results-table th.numeric {
+  text-align: right;
+}
+
+.results-table .null {
+  color: var(--an-text-muted);
+  font-style: italic;
+}
+
+/* Saved queries */
+.panel-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.saved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.saved-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.2rem 0.25rem;
+  border-radius: 4px;
+}
+
+.saved-list li.is-current {
+  background: rgba(42, 120, 214, 0.1);
+}
+
+.saved-list .open-query {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.saved-list .open-query:hover .saved-name,
+.saved-list .open-query:focus-visible .saved-name {
+  text-decoration: underline;
+}
+
+.saved-list .saved-name {
+  display: block;
+  color: var(--an-accent);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-list .saved-meta {
+  display: block;
+  color: var(--an-text-muted);
+  font-size: 0.72rem;
+}
+
+.saved-list .delete-query {
+  background: none;
+  border: 0;
+  padding: 0 0.15rem;
+  color: var(--an-text-muted);
+  cursor: pointer;
+}
+
+.saved-list .delete-query:hover,
+.saved-list .delete-query:focus-visible {
+  color: var(--an-error);
+}
+
+/* The query's name, description and save controls */
+.query-details {
+  margin-bottom: 0.5rem;
+}
+
+.query-details-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.query-details .query-name {
+  flex: 1 1 18rem;
+  max-width: 32rem;
+  font-weight: 600;
+}
+
+.query-details .share-query {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.query-details .query-description {
+  resize: vertical;
+  font-size: 0.8rem;
+}
+
+/* Confirmation dialog */
+.confirm-dialog {
+  border: 1px solid var(--an-border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+}
+
+/* The relative time help: wider than a confirmation, scrolling within the viewport */
+.help-dialog {
+  max-width: min(44rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+.help-dialog .panel-heading-row {
+  margin-bottom: 0.5rem;
+}
+.help-dialog h3.panel-heading {
+  margin-top: 1rem;
+}
+.help-list {
+  padding-left: 1.1rem;
+  margin-bottom: 0;
+}
+.help-table {
+  margin-bottom: 0.5rem;
+}
+.help-table td,
+.help-table th {
+  padding: 0.2rem 0.5rem;
+}
+.help-now {
+  color: var(--an-text-muted);
+  white-space: nowrap;
+}
+.help-try {
+  max-width: 15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.confirm-dialog::backdrop {
+  background: rgba(11, 11, 11, 0.3);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* Charts */
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.chart-controls label {
+  margin-bottom: 0;
+}
+
+.chart-axis-controls {
+  display: contents;
+}
+
+.chart-y {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chart-y-legend {
+  float: left;
+  width: auto;
+  margin: 0 0.25rem 0 0;
+  font-size: inherit;
+}
+
+.chart-y label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+.analytics-chart {
+  max-width: 64rem;
+}
+
+/* The row limit next to Run */
+.row-limit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.row-limit input {
+  width: 6rem;
+}
+
+/* Tabs between the Query and Dashboards pages */
+.analytics-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--an-border);
+}
+
+.analytics-tab {
+  padding: 0.4rem 0.9rem;
+  margin-bottom: -1px;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  color: var(--an-text-secondary);
+  text-decoration: none;
+}
+
+.analytics-tab:hover,
+.analytics-tab:focus-visible {
+  color: var(--an-accent);
+  text-decoration: none;
+}
+
+.analytics-tab.is-active {
+  color: var(--an-text-primary);
+  font-weight: 600;
+  background: #fff;
+  border-color: var(--an-border) var(--an-border) #fff;
+}
+
+/* Dashboards */
+/* The one Refresh button and when the panels last ran, at the right of the name row */
+.dashboard-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.dashboard-grid {
+  margin-top: 0.75rem;
+}
+
+.dashboard-empty {
+  grid-column: 1 / -1;
+  color: var(--an-text-secondary);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1199px) {
+  .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dashboard-tile {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  min-width: 0;
+}
+
+.dashboard-tile.is-full {
+  grid-column: 1 / -1;
+}
+
+.dashboard-tile-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-tile-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-tile-meta {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* The selected panel, whose parameters the Parameters box shows */
+.dashboard-tile.is-selected {
+  border-color: var(--an-accent);
+  box-shadow: 0 0 0 1px var(--an-accent);
+}
+/* Pushes the meta and the parameters button to the right of the title */
+.dashboard-tile-title {
+  margin-right: auto;
+}
+.dashboard-tile-select {
+  line-height: 1;
+}
+/* The values worth pointing out: changed from the saved dashboard, or set for all panels */
+.dashboard-tile-parameters {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  margin: -0.25rem 0 0.5rem;
+  overflow-wrap: anywhere;
+}
+.dashboard-tile .viz-card {
+  border: 0;
+  padding: 0;
+  background: none;
+}
+
+/* The tile's header already names the query */
+.dashboard-tile .viz-title {
+  display: none;
+}
+
+.dashboard-tile .results-table-wrap {
+  max-height: 24rem;
+}
+
+.dashboard-tile-message {
+  color: var(--an-text-secondary);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+.dashboard-tile-message.is-error {
+  color: var(--an-error);
+}
+
+/* The panel editor */
+.panel-editor {
+  background: var(--an-surface);
+  border: 1px solid var(--an-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+/* The panels as a table, so each column lines up under its header */
+.panel-editor-table {
+  border-collapse: separate;
+  border-spacing: 0.5rem 0.3rem;
+  margin: 0 -0.5rem 0.25rem;
+  font-size: 0.85rem;
+}
+
+.panel-editor-table th {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  padding: 0;
+}
+
+/* Top-aligned, as a title may have a hint under it */
+.panel-editor-table td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.panel-editor-table .panel-number {
+  color: var(--an-text-secondary);
+  text-align: right;
+  padding-top: 0.3rem;
+}
+
+.panel-editor-table select.panel-query {
+  min-width: 14rem;
+  max-width: 24rem;
+}
+
+.panel-editor-table input.panel-title {
+  min-width: 24rem;
+  width: 100%;
+}
+/* Under a title: the variables it can use, and any it can't fill in */
+.panel-title-hint {
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+.panel-title-hint.is-invalid {
+  color: var(--an-error);
+}
+/* The Parameters box's "For" menu: all panels, or one */
+.parameter-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.panel-editor-table input.panel-limit {
+  width: 6rem;
+}
+
+.panel-editor-table .panel-order {
+  display: flex;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.panel-editor-table .panel-move {
+  padding: 0 0.35rem;
+}
+
+/* Collapsible boxes: the heading is a button that shows or hides the box's body */
+.collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.collapse-toggle:hover,
+.collapse-toggle:focus-visible {
+  color: var(--an-accent);
+}
+
+.collapse-toggle .bi {
+  transition: transform 0.15s;
+}
+
+.collapse-toggle[aria-expanded="false"] .bi {
+  transform: rotate(-90deg);
+}
+
+.collapse-count {
+  color: var(--an-text-muted);
+  font-weight: normal;
+}
+
+/* Collapsed, a box is just its heading row */
+.parameters:has(.collapse-toggle[aria-expanded="false"]) .panel-heading-row,
+.panel-editor:has(.collapse-toggle[aria-expanded="false"]) .panel-heading-row {
+  margin-bottom: 0;
+}
+
+/* Time parameters: the picker and its quick picks, on one line; a range is both ends and its presets */
+.parameter-time {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.parameter-grid .parameter-quick-pick {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.parameter-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.35rem 0.6rem;
+}
+
+.parameter-range-ends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+}
+
+.parameter-range-ends > div {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* A time parameter: the text (a relative time like now-7d, or a fixed ISO time), the calendar button
+   for picking a fixed time, and a note saying what the value means now */
+.parameter-time-input {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.parameter-grid .parameter-time-text {
+  width: 15rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.parameter-picker-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The date input the calendar button opens: hidden under the button, so the browser's picker
+   appears beside it, unless the browser can't open it that way (no showPicker) */
+.parameter-grid .parameter-picker {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  min-width: 0;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.parameter-grid .parameter-picker.is-visible {
+  position: absolute;
+  top: 100%;
+  bottom: auto;
+  z-index: 10;
+  width: auto;
+  min-width: 15rem;
+  height: auto;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--an-border);
+  border-radius: 4px;
+  background: #fff;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.parameter-time-note {
+  min-height: 1.1rem;
+  margin-top: 0.15rem;
+  color: var(--an-text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.parameter-time-note.is-invalid {
+  color: var(--an-error);
+}
+
+/* A single number: the hero figure, named by its column */
+.stat-figure {
+  padding: 0.5rem 0 0.25rem;
+}
+
+.stat-value {
+  color: var(--viz-text-primary);
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  color: var(--viz-text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+/* A donut: slices separated by a thin surface-colored gap, the total in the middle */
+.donut-chart {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.donut-slice {
+  stroke: var(--viz-surface);
+  stroke-width: 2px;
+  cursor: default;
+}
+
+.donut-slice:hover {
+  opacity: 0.85;
+}
+
+.donut-total {
+  fill: var(--viz-text-primary);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.donut-total-label {
+  fill: var(--viz-text-muted);
+  font-size: 11px;
+}
+
+.chart-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}

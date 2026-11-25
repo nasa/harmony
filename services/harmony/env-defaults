@@ -313,6 +313,19 @@ ALLOW_SERVICE_SELECTION=true
 # Whether to use clustering to fork one harmony process per available CPU
 USE_CLUSTERING=false
 
+# The analytics query service (services/analytics-query) that the /admin/analytics page sends its
+# queries to. This is where bin/start-dev-services runs it; bin/deploy-services points it at the
+# k8s service instead when harmony runs in k8s.
+ANALYTICS_QUERY_URL=http://localhost:5007
+
+# Sent to the analytics query service with every request, so it must match the service's
+# ANALYTICS_QUERY_SHARED_SECRET. Override it outside local development.
+ANALYTICS_QUERY_SHARED_SECRET=local-development-only
+
+# How long to wait for the analytics query service to answer. Longer than its own query time limit
+# (ANALYTICS_QUERY_TIMEOUT_MS), so the service's timeout error is what the user sees.
+ANALYTICS_QUERY_REQUEST_TIMEOUT_MS=75000
+
 ###########################################################################
 #                             Prometheus Config                           #
 #                                                                         #
@@ -436,6 +449,14 @@ WORK_FAILER_REQUESTS_MEMORY=128Mi
 WORK_FAILER_LIMITS_CPU=512m
 WORK_FAILER_LIMITS_MEMORY=512Mi
 WORK_FAILER_IMAGE=harmonyservices/work-failer:stable
+
+# analytics query service. DuckDB's native memory use runs well past its own memory_limit
+# (ANALYTICS_QUERY_MEMORY_LIMIT), so the container limit leaves plenty of room above it.
+ANALYTICS_QUERY_REQUESTS_CPU=250m
+ANALYTICS_QUERY_REQUESTS_MEMORY=1Gi
+ANALYTICS_QUERY_LIMITS_CPU=1000m
+ANALYTICS_QUERY_LIMITS_MEMORY=3Gi
+ANALYTICS_QUERY_IMAGE=harmonyservices/analytics-query:stable
 
 # backend services
 HARMONY_GDAL_ADAPTER_IMAGE=ghcr.io/asfhyp3/harmony-gdal:latest

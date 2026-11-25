@@ -16,7 +16,8 @@ export default tseslint.config(
 
   // 1. Global ignores (replaces .eslintignore)
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/built/**', '**/coverage/**', 'db/**'],
+    // public/js/vendor holds generated bundles (see services/harmony/bin/build-codemirror-bundle)
+    ignores: ['**/node_modules/**', '**/dist/**', '**/built/**', '**/coverage/**', 'db/**', '**/public/js/vendor/**'],
   },
 
   // 2. Base TypeScript config (replaces root .eslintrc.yml)
