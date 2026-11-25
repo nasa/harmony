@@ -63,6 +63,10 @@
             <label class="visually-hidden" for="queryName">Query name</label>
             <input type="text" id="queryName" class="form-control form-control-sm query-name" maxlength="255"
               placeholder="Untitled query">
+            <label class="share-query small mb-0" for="queryShared"
+              title="Shared queries can be seen and run by every user of this page. Private ones only by you.">
+              <input type="checkbox" id="queryShared"> Share with other users
+            </label>
             <button type="submit" class="btn btn-sm btn-outline-primary" id="saveQuery">
               <i class="bi bi-save" aria-hidden="true"></i> <span id="saveLabel">Save</span>
             </button>

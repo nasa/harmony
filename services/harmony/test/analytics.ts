@@ -10,7 +10,7 @@ import request from 'supertest';
 import { auth } from './helpers/auth';
 import hookServersStartStop from './helpers/servers';
 import { truncateAll } from '../../../packages/util/test/helpers/db';
-import AnalyticsQuery from '../app/models/analytics-query';
+import AnalyticsQuery, { getAnalyticsQueryById } from '../app/models/analytics-query';
 import db from '../app/util/db';
 import env from '../app/util/env';
 
@@ -210,15 +210,19 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
   };
   let adminQueryId: number;
   // Queries saved by another admin. The EDL fixtures have only one admin (adam), so these are
-  // created directly in the database.
+  // created directly in the database. They are shared; the one that isn't is private.
   const ANOTHER_ADMIN = 'another-admin';
   let anotherQueryId: number;
+  let anotherPrivateQueryId: number;
 
   before(async function () {
-    const mine = new AnalyticsQuery({ username: ANOTHER_ADMIN, name: 'My query', sql: 'SELECT 1' });
+    const mine = new AnalyticsQuery({ username: ANOTHER_ADMIN, name: 'My query', sql: 'SELECT 1', shared: true });
     await mine.save(db);
     anotherQueryId = mine.id;
-    await new AnalyticsQuery({ username: ANOTHER_ADMIN, name: failedByStatus.name, sql: 'SELECT 1' }).save(db);
+    await new AnalyticsQuery({ username: ANOTHER_ADMIN, name: failedByStatus.name, sql: 'SELECT 1', shared: true }).save(db);
+    const secret = new AnalyticsQuery({ username: ANOTHER_ADMIN, name: 'Private query', sql: 'SELECT 1', shared: false });
+    await secret.save(db);
+    anotherPrivateQueryId = secret.id;
   });
 
   describe('saving a query', function () {
@@ -367,6 +371,56 @@ describe('/admin/analytics/api/queries (saved queries)', function () {
         expect((await user.list(this.frontend)).status).to.equal(403);
         expect((await user.get(this.frontend, adminQueryId)).status).to.equal(403);
       }
+    });
+  });
+
+  describe('private and shared queries', function () {
+    it('saves a new query as private unless it is shared', async function () {
+      const res = await admin.create(this.frontend, { name: 'Private by default', sql: 'SELECT 1' });
+      expect(res.status).to.equal(201);
+      expect(res.body.shared).to.equal(false);
+      const shared = await admin.create(this.frontend, { name: 'Shared from the start', sql: 'SELECT 1', shared: true });
+      expect(shared.body.shared).to.equal(true);
+      for (const id of [res.body.id, shared.body.id]) expect((await admin.delete(this.frontend, id)).status).to.equal(204);
+    });
+
+    it('lists the user\'s own private queries', async function () {
+      const res = await admin.create(this.frontend, { name: 'Mine alone', sql: 'SELECT 1' });
+      const listed = (await admin.list(this.frontend)).body.queries.find((q) => q.id === res.body.id);
+      expect(listed).to.include({ name: 'Mine alone', shared: false });
+      expect((await admin.get(this.frontend, res.body.id)).status).to.equal(200);
+      expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);
+    });
+
+    it('does not list another user\'s private queries, even for an admin', async function () {
+      const ids = (await admin.list(this.frontend)).body.queries.map((q) => q.id);
+      expect(ids).to.include(anotherQueryId);
+      expect(ids).not.to.include(anotherPrivateQueryId);
+    });
+
+    it('treats another user\'s private query as not found', async function () {
+      expect((await admin.get(this.frontend, anotherPrivateQueryId)).status).to.equal(404);
+      expect((await admin.update(this.frontend, anotherPrivateQueryId, { sql: 'SELECT 2' })).status).to.equal(404);
+      expect((await admin.delete(this.frontend, anotherPrivateQueryId)).status).to.equal(404);
+      const query = await getAnalyticsQueryById(db, anotherPrivateQueryId);
+      expect(query.sql).to.equal('SELECT 1');
+    });
+
+    it('lets the owner share a query and make it private again', async function () {
+      const res = await admin.create(this.frontend, { name: 'Shared later', sql: 'SELECT 1' });
+      const shared = await admin.update(this.frontend, res.body.id, { shared: true });
+      expect(shared.status).to.equal(200);
+      expect(shared.body.shared).to.equal(true);
+      expect((await admin.get(this.frontend, res.body.id)).body.shared).to.equal(true);
+      const unshared = await admin.update(this.frontend, res.body.id, { shared: false });
+      expect(unshared.body.shared).to.equal(false);
+      expect((await admin.delete(this.frontend, res.body.id)).status).to.equal(204);
+    });
+
+    it('rejects a shared value that is not true or false', async function () {
+      const res = await admin.create(this.frontend, { name: 'Bad sharing', sql: 'SELECT 1', shared: 'yes' });
+      expect(res.status).to.equal(400);
+      expect(res.body.errors[0].message).to.include('shared must be');
     });
   });
 

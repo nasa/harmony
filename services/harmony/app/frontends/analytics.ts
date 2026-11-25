@@ -95,12 +95,14 @@ export function sendError(res: Response, status: number, message: string, errors
 }
 
 /**
- * Get the saved query a request's :id names
+ * Get the saved query a request's :id names. Another user's private query is treated as if it
+ * didn't exist, so its id doesn't reveal that it does.
  *
- * @returns the query, or undefined (having responded with a 404) if there is none
+ * @returns the query, or undefined (having responded with a 404) if there is none the user can see
  */
 async function requestedQuery(req: HarmonyRequest, res: Response): Promise<AnalyticsQuery | undefined> {
-  const query = /^\d+$/.test(req.params.id) ? await getAnalyticsQueryById(db, Number(req.params.id)) : undefined;
+  let query = /^\d+$/.test(req.params.id) ? await getAnalyticsQueryById(db, Number(req.params.id)) : undefined;
+  if (query && !query.isVisibleTo(req.user)) query = undefined;
   if (!query) {
     sendError(res, 404, `There is no saved query with id ${req.params.id}`);
   }
@@ -145,14 +147,22 @@ function applyBody(query: AnalyticsQuery, body: { [key: string]: unknown }): str
       problems.push(e.message);
     }
   }
+  if (body.shared !== undefined) {
+    if (typeof body.shared !== 'boolean') {
+      problems.push('shared must be true or false');
+    } else {
+      query.shared = body.shared;
+    }
+  }
   return problems.concat(problems.length === 0 ? query.validate() ?? [] : []);
 }
 
 /**
- * Express.js handler that lists the saved queries
+ * Express.js handler that lists the saved queries the user can see: their own, and everyone's shared
+ * ones
  */
 export async function listAnalyticsQueries(req: HarmonyRequest, res: Response): Promise<void> {
-  const queries = await getAnalyticsQueries(db);
+  const queries = await getAnalyticsQueries(db, req.user);
   res.json({ queries: queries.map((q) => q.serialize()) });
 }
 
@@ -165,14 +175,15 @@ export async function getAnalyticsQuery(req: HarmonyRequest, res: Response): Pro
 }
 
 /**
- * Express.js handler that saves a new query, owned by the requesting user
+ * Express.js handler that saves a new query, owned by the requesting user and private to them
+ * unless the body has shared: true
  */
 export async function createAnalyticsQuery(req: HarmonyRequest, res: Response): Promise<void> {
   if (!req.is('application/json')) {
     sendError(res, 415, 'The request body must be JSON (Content-Type: application/json)');
     return;
   }
-  const query = new AnalyticsQuery({ username: req.user });
+  const query = new AnalyticsQuery({ username: req.user, shared: false });
   const problems = applyBody(query, req.body ?? {});
   if (problems.length > 0) {
     sendError(res, 400, 'The query could not be saved', problems);
@@ -213,8 +224,8 @@ export async function updateAnalyticsQuery(req: HarmonyRequest, res: Response): 
       sendError(res, 409, `${query.username} already has a saved query named "${query.name}"`);
       return;
     }
-    const { name, description, sql, parameters, chart, row_limit } = query;
-    await query.save(tx, { name, description, sql, parameters, chart, row_limit });
+    const { name, description, sql, parameters, chart, row_limit, shared } = query;
+    await query.save(tx, { name, description, sql, parameters, chart, row_limit, shared });
     req.context.logger.info(`User ${req.user} updated analytics query ${query.id} "${query.name}"`);
     res.json(query.serialize());
   });

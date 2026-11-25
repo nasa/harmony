@@ -374,6 +374,7 @@ CREATE TABLE `analytics_queries` (
   `parameters` text,
   `chart` text,
   `row_limit` integer,
+  `shared` boolean not null default false,
   `username` varchar(255) not null,
   `createdAt` datetime not null,
   `updatedAt` datetime not null,

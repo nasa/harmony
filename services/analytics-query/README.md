@@ -33,9 +33,13 @@ that the user is an admin, then calls this service with a shared secret and the 
 - a results table with CSV download
 - saved queries, including the parameter values to use by default. These are stored in the jobs
   database's `analytics_queries` table and served by the frontend itself, at
-  `/admin/analytics/api/queries`. Every admin can see, run, change and delete every saved query. The API also has an owner rule
-  (only the owner or an admin may change or delete a query), which would matter if the page were
-  opened to non-admins. `?query=<id>` links to a saved query.
+  `/admin/analytics/api/queries`. A saved query is private to its owner unless the "Share with
+  other users" box is ticked when it is saved: only the owner sees a private query (other admins
+  included; the API answers 404 for it), while every admin can see, run, change and delete a
+  shared one. The list marks your private queries. Saving a copy of someone else's query makes a
+  private copy unless the box is ticked. Queries saved before sharing existed were made shared.
+  The API also has an owner rule (only the owner or an admin may change or delete a query), which
+  would matter if the page were opened to non-admins. `?query=<id>` links to a saved query.
 - a **Dashboards** tab (`/admin/analytics/dashboards`, `public/js/analytics/dashboards.js`):
   layouts of saved queries, each panel showing its query's chart or a table, at half or full width.
   A panel runs with the row limit saved with its query (the Query tab's Row limit when the query was
@@ -64,7 +68,9 @@ that the user is an admin, then calls this service with a shared secret and the 
   its panels' queries two at a time (this service's default concurrency). Dashboards are stored in
   the jobs database's `analytics_dashboards` table and served by the frontend at
   `/admin/analytics/api/dashboards`, with the same access rules as saved queries. A panel whose
-  saved query has been deleted says so, rather than breaking the dashboard. `?dashboard=<id>`
+  saved query has been deleted, or is another user's private query, says so, rather than
+  breaking the dashboard (the panel editor marks private queries, whose panels only their owner
+  can see). `?dashboard=<id>`
   links to a dashboard.
 - a chart of the results, saved with the query (`public/js/analytics/chart.js`), as columns
   (stacked for several series) or lines. Either several numeric columns are each a series, or one

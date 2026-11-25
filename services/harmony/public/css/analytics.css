@@ -397,6 +397,13 @@
   font-weight: 600;
 }
 
+.query-details .share-query {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
 .query-details .query-description {
   resize: vertical;
   font-size: 0.8rem;

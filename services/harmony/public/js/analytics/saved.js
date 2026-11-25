@@ -60,7 +60,9 @@ export function renderSavedList(list, queries, { currentId, canChange, onOpen, o
     name.textContent = query.name;
     const meta = document.createElement('span');
     meta.className = 'saved-meta';
-    meta.textContent = `${query.owner} · ${changedAgo(query.updatedAt)}`;
+    // Only saved queries can be private (only their owner sees them); dashboards have no `shared`
+    meta.textContent = [query.owner, query.shared === false ? 'private' : null, changedAgo(query.updatedAt)]
+      .filter(Boolean).join(' · ');
     open.append(name, meta);
     open.addEventListener('click', () => onOpen(query));
     item.append(open);

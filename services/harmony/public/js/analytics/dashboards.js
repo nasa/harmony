@@ -599,7 +599,9 @@ async function refresh(force = false) {
     // Every panel counts towards "Ran n of N", however it ends, so the status reaches "Updated"
     try {
       if (!query) {
-        tileMessage(body, `Saved query ${panel.queryId} no longer exists. Edit the dashboard to remove this panel.`, true);
+        // Another user's private query can't be seen, so it looks the same as a deleted one
+        tileMessage(body, `Saved query ${panel.queryId} has been deleted, or is private to its owner. Edit the `
+          + 'dashboard to remove this panel.', true);
         return;
       }
       if (invalid.has(query.id)) {
@@ -671,8 +673,9 @@ function renderPanelEditor() {
       td.append(...children);
       return td;
     };
-    const queryOptions = queries.map((q) => [q.id, `${q.name} (${q.owner})`]);
-    if (!state.queries.has(panel.queryId)) queryOptions.unshift([panel.queryId, `Deleted query ${panel.queryId}`]);
+    // A private query's panel shows only for its owner, so the dashboard's other users can't see it
+    const queryOptions = queries.map((q) => [q.id, `${q.name} (${q.owner}${q.shared ? '' : ', private'})`]);
+    if (!state.queries.has(panel.queryId)) queryOptions.unshift([panel.queryId, `Unavailable query ${panel.queryId}`]);
     const limit = document.createElement('input');
     limit.type = 'number';
     limit.min = '1';

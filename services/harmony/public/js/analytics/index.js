@@ -425,6 +425,7 @@ function currentDetails(editor) {
     sql: editor.text(),
     chart: JSON.stringify(state.chart),
     rowLimit: $('rowLimit').value,
+    shared: $('queryShared').checked,
   };
 }
 
@@ -441,6 +442,8 @@ function snapshotOf(query) {
     chart: JSON.stringify(query.chart ?? null),
     // As shown, which is the query's if it has one (see showQuery)
     rowLimit: $('rowLimit').value,
+    // As shown, which is the query's if the user can change it, else private (see showQuery)
+    shared: $('queryShared').checked,
   };
 }
 
@@ -453,7 +456,7 @@ function snapshotOf(query) {
 function hasUnsavedChanges(editor) {
   const details = currentDetails(editor);
   if (!state.snapshot) return details.sql.trim() !== '';
-  return ['name', 'description', 'sql', 'chart', 'rowLimit'].some((key) => details[key] !== state.snapshot[key]);
+  return ['name', 'description', 'sql', 'chart', 'rowLimit', 'shared'].some((key) => details[key] !== state.snapshot[key]);
 }
 
 /**
@@ -526,6 +529,9 @@ function showQuery(query, editor) {
   state.current = query;
   // A query saved with a row limit runs with it; otherwise the box keeps the user's own setting
   if (query?.rowLimit) $('rowLimit').value = query.rowLimit;
+  // The box says whether saving shares the query: a new query, or a copy of someone else's, is
+  // private unless the user ticks it
+  $('queryShared').checked = !!query && canChange(query) && query.shared;
   state.snapshot = query ? snapshotOf(query) : null;
   state.chart = query?.chart ?? null;
   $('queryName').value = query?.name ?? '';
@@ -670,6 +676,7 @@ function init() {
   $('chartControls').addEventListener('submit', (e) => e.preventDefault());
   $('queryName').addEventListener('input', () => updateSaveControls(editor));
   $('queryDescription').addEventListener('input', () => updateSaveControls(editor));
+  $('queryShared').addEventListener('change', () => updateSaveControls(editor));
   $('newQuery').addEventListener('click', async () => {
     if (!(await okToDiscard(editor))) return;
     showQuery(null, editor);

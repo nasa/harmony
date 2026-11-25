@@ -32,6 +32,8 @@ export interface AnalyticsQueryForDisplay {
   chart: object | null;
   // The most rows to fetch when it runs, or null for the default
   rowLimit: number | null;
+  // Whether every user of the page can see it, rather than only its owner
+  shared: boolean;
   owner: string;
   createdAt: Date;
   updatedAt: Date;
@@ -56,10 +58,11 @@ export function parseJson<T>(text: string | null): T | null {
 }
 
 /**
- * A query saved from the /admin/analytics page, with default values for its parameters. Anyone who
- * can use the page can see and run every saved query, but only its owner or an admin can change or
- * delete it. The page is admin-only, so today every user of it can change any query; the owner
- * check matters if the page is ever opened to non-admins.
+ * A query saved from the /admin/analytics page, with default values for its parameters. A query is
+ * private to its owner unless it is shared: only its owner can see a private query (admins
+ * included), while anyone who can use the page can see and run a shared one. Only its owner or an
+ * admin can change or delete a query they can see. The page is admin-only, so today every user of
+ * it can change any shared query; the owner check matters if the page is ever opened to non-admins.
  */
 export default class AnalyticsQuery extends Record {
   static table = 'analytics_queries';
@@ -78,6 +81,9 @@ export default class AnalyticsQuery extends Record {
 
   // The most rows to fetch when the query runs, or null for the default
   row_limit: number;
+
+  // Whether every user of the page can see the query, rather than only its owner
+  shared: boolean;
 
   // The owner
   username: string;
@@ -188,6 +194,15 @@ export default class AnalyticsQuery extends Record {
   }
 
   /**
+   * Whether a user may see this query: its owner always, anyone else only if it is shared
+   *
+   * @param username - the user
+   */
+  isVisibleTo(username: string): boolean {
+    return !!this.shared || this.username === username;
+  }
+
+  /**
    * Get the query as the API returns it
    */
   serialize(): AnalyticsQueryForDisplay {
@@ -199,6 +214,8 @@ export default class AnalyticsQuery extends Record {
       parameters: parseJson(this.parameters) ?? {},
       chart: parseJson(this.chart),
       rowLimit: this.row_limit ?? null,
+      // SQLite returns booleans as 0 or 1
+      shared: !!this.shared,
       owner: this.username,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
@@ -222,13 +239,17 @@ export default class AnalyticsQuery extends Record {
 }
 
 /**
- * Get every saved query, most recently changed first
+ * Get every saved query a user can see (theirs, and everyone's shared ones), most recently changed
+ * first
  *
  * @param tx - The database transaction
+ * @param username - The user
  * @returns the queries
  */
-export async function getAnalyticsQueries(tx: Transaction): Promise<AnalyticsQuery[]> {
-  const rows = await tx(AnalyticsQuery.table).select().orderBy('updatedAt', 'desc').orderBy('id', 'desc');
+export async function getAnalyticsQueries(tx: Transaction, username: string): Promise<AnalyticsQuery[]> {
+  const rows = await tx(AnalyticsQuery.table).select()
+    .where((q) => q.where({ shared: true }).orWhere({ username }))
+    .orderBy('updatedAt', 'desc').orderBy('id', 'desc');
   return rows.map((row) => new AnalyticsQuery(row));
 }
 
